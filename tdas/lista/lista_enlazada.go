@@ -1,7 +1,7 @@
 package lista
 
-const panicListaVacia = "La lista esta vacia"
-const panicIterador = "El iterador termino de iterar"
+const PANIC_LISTA_VACIA = "La lista esta vacia"
+const PANIC_ITERADOR = "El iterador termino de iterar"
 
 type nodoLista[T any] struct {
 	dato      T
@@ -55,7 +55,7 @@ func (l *listaEnlazada[T]) InsertarUltimo(dato T) {
 
 func (l *listaEnlazada[T]) BorrarPrimero() T {
 	if l.EstaVacia() {
-		panic(panicListaVacia)
+		panic(PANIC_LISTA_VACIA)
 	}
 	primero := l.VerPrimero()
 	if l.primero.siguiente == nil {
@@ -70,14 +70,14 @@ func (l *listaEnlazada[T]) BorrarPrimero() T {
 
 func (l *listaEnlazada[T]) VerPrimero() T {
 	if l.EstaVacia() {
-		panic(panicListaVacia)
+		panic(PANIC_LISTA_VACIA)
 	}
 	return l.primero.dato
 }
 
 func (l *listaEnlazada[T]) VerUltimo() T {
 	if l.EstaVacia() {
-		panic(panicListaVacia)
+		panic(PANIC_LISTA_VACIA)
 	}
 	return l.ultimo.dato
 }
