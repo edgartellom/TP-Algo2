@@ -14,7 +14,7 @@ func TestListaVacia(t *testing.T) {
 }
 
 func TestInsertar(t *testing.T) {
-	t.Log("Hacemos pruebas encolando y desencolando elementos")
+	t.Log("Hacemos pruebas insertando y borrando elementos")
 	lista := TDALista.CrearListaEnlazada[int]()
 	lista.InsertarPrimero(2)
 	lista.InsertarUltimo(7)
@@ -49,7 +49,7 @@ func TestVolumen(t *testing.T) {
 }
 
 func TestBorde(t *testing.T) {
-	t.Log("Prueba de desapilar al borde de la pila")
+	t.Log("Prueba de borrar al borde de la lista")
 	lista := TDALista.CrearListaEnlazada[int]()
 	//Comprobacion con lista recien creada
 	require.True(t, lista.EstaVacia())
