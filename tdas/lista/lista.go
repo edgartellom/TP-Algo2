@@ -26,7 +26,27 @@ type Lista[T any] interface {
 	// Largo devuelve el tamaño de la lista
 	Largo() int
 
+	// Iterador instancia al iterador externo de la lista
+	Iterador() IteradorLista[T]
+
 	// Iterar(visitar func(T) bool)
 
-	// Iterador() IteradorLista[T]
+}
+
+type IteradorLista[T any] interface {
+
+	// VerActual devuelve el elemento actual del iterador de la lista
+	VerActual() T
+
+	// HaySiguiente devuelve verdadero si existe un elemento siguiente al actual del iterador, false en caso contrario.
+	HaySiguiente() bool
+
+	// Siguiente avanza al siguiente elemento en el iterador de la lista
+	Siguiente()
+
+	// Insertar agrega un nuevo elemento a la lista en la posicion del elemento que apunta el iterador, desplazando los elementos.
+	Insertar(T)
+
+	// Borrar quita un elemento a la lista en la posicion del elemento actual del iterador y devuelve dicho elemento.
+	Borrar() T
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TEST LISTA ENLAZADA
 func TestListaVacia(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
 	require.True(t, lista.EstaVacia())
@@ -17,6 +18,8 @@ func TestInsertar(t *testing.T) {
 	t.Log("Hacemos pruebas insertando y borrando elementos")
 	lista := TDALista.CrearListaEnlazada[int]()
 	lista.InsertarPrimero(2)
+	require.EqualValues(t, 2, lista.VerUltimo())
+	require.EqualValues(t, 2, lista.VerPrimero())
 	lista.InsertarUltimo(7)
 	lista.InsertarPrimero(4)
 	require.EqualValues(t, 4, lista.VerPrimero())
@@ -69,6 +72,7 @@ func TestBorde(t *testing.T) {
 }
 
 func TestTiposDato(t *testing.T) {
+	t.Log("Prueba con distintos tipos de datos")
 	//Prueba con enteros
 	listaEnteros := TDALista.CrearListaEnlazada[int]()
 	require.True(t, listaEnteros.EstaVacia())
@@ -89,4 +93,82 @@ func TestTiposDato(t *testing.T) {
 	require.True(t, listaFlotantes.EstaVacia())
 	listaFlotantes.InsertarPrimero(3.45)
 	require.EqualValues(t, 3.45, listaFlotantes.VerPrimero())
+}
+
+// TEST ITERADOR EXTERNO
+func TestAlPrincipio(t *testing.T) {
+	t.Log("Prueba al principio de la lista")
+	lista := TDALista.CrearListaEnlazada[int]()
+	iter := lista.Iterador()
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Siguiente() })
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Borrar() })
+	iter.Insertar(8)
+	iter.Insertar(3)
+	iter.Insertar(5)
+	require.EqualValues(t, 5, iter.VerActual())
+	require.EqualValues(t, 5, lista.VerPrimero())
+	require.EqualValues(t, 8, lista.VerUltimo())
+	require.EqualValues(t, 3, lista.Largo())
+	require.EqualValues(t, 5, iter.Borrar())
+	require.EqualValues(t, 2, lista.Largo())
+	require.EqualValues(t, 3, iter.VerActual())
+	require.EqualValues(t, 3, lista.VerPrimero())
+	require.EqualValues(t, 8, lista.VerUltimo())
+	iter.Siguiente()
+	require.EqualValues(t, 8, iter.VerActual())
+	iter.Siguiente()
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Siguiente() })
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Borrar() })
+}
+
+func TestAlFinal(t *testing.T) {
+	t.Log("Prueba al final de la lista")
+	lista := TDALista.CrearListaEnlazada[int]()
+	iter := lista.Iterador()
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
+	iter.Insertar(4)
+	require.EqualValues(t, 4, iter.VerActual())
+	iter.Siguiente()
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
+	iter.Insertar(2)
+	require.EqualValues(t, 2, iter.VerActual())
+	require.EqualValues(t, 2, lista.VerUltimo())
+	iter.Siguiente()
+	iter.Insertar(7)
+	iter.Borrar()
+	require.EqualValues(t, 7, iter.VerActual())
+	require.EqualValues(t, 7, lista.VerUltimo())
+	require.EqualValues(t, 4, lista.VerPrimero())
+}
+
+func TestAlMedio(t *testing.T) {
+	t.Log("Prueba al medio de la lista")
+	lista := TDALista.CrearListaEnlazada[int]()
+	iter := lista.Iterador()
+	iter.Insertar(11)
+	iter.Insertar(9)
+	iter.Insertar(6)
+	require.EqualValues(t, 6, iter.VerActual())
+	iter.Siguiente()
+	iter.Insertar(3)
+	require.EqualValues(t, 3, iter.VerActual())
+	require.EqualValues(t, 3, iter.Borrar())
+	require.EqualValues(t, 6, iter.VerActual())
+}
+
+func TestIteradorInsertaEnListaVacia(t *testing.T) {
+	lista := TDALista.CrearListaEnlazada[int]()
+	iter := lista.Iterador()
+	for i := 0; i < 5; i++ {
+		iter.Insertar(i)
+	}
+	for i := 4; i >= 0; i-- {
+		require.EqualValues(t, i, iter.VerActual())
+		iter.Siguiente()
+	}
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Siguiente() })
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
+	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Borrar() })
 }
