@@ -86,10 +86,12 @@ func (lista *listaEnlazada[T]) InsertarPrimero(elemento T) {
 }
 
 func (lista *listaEnlazada[T]) Iterar(visitar func(T) bool) {
-	for actual := lista.primero; visitar(actual.dato); actual = actual.siguiente {
-		if actual.siguiente == nil {
-			break
+	actual := lista.primero
+	for actual != nil {
+		if !visitar(actual.dato) {
+			return
 		}
+		actual = actual.siguiente
 	}
 }
 

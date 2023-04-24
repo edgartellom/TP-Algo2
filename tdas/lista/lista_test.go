@@ -119,6 +119,25 @@ func TestVolumen(t *testing.T) {
 
 // TEST ITERADORES INTERNOS
 
+func TestInteradorInternoEnListaVacia(t *testing.T) {
+	lista := TDALista.CrearListaEnlazada[int]()
+
+	require.EqualValues(t, 0, lista.Largo())
+	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.VerPrimero() })
+	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.VerUltimo() })
+	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.BorrarPrimero() })
+
+	contador := 0
+	contador_ptr := &contador
+
+	lista.Iterar(func(v int) bool {
+		*contador_ptr += v
+		return true
+	})
+
+	require.EqualValues(t, 0, contador)
+}
+
 func TestDeIteradorInternoSinCorte(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
 	var valorActual int
