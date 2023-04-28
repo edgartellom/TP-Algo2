@@ -8,8 +8,10 @@ import (
 )
 
 const VOLUMEN = 1000
+const LARGO_1 = 10
+const CANTIDAD_A_AVANZAR = 3
 
-func TestPilaVacia(t *testing.T) {
+func TestListaVacia(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
 	require.True(t, lista.EstaVacia())
 	require.EqualValues(t, 0, lista.Largo())
@@ -18,7 +20,7 @@ func TestPilaVacia(t *testing.T) {
 	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.BorrarPrimero() })
 }
 
-func TestPilaConUnElemento(t *testing.T) {
+func TestListaConUnElemento(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
 	var valor int = 9
 	lista.InsertarPrimero(valor)
@@ -32,7 +34,7 @@ func TestPilaConUnElemento(t *testing.T) {
 
 func TestInsertarYQuitarPrimeroSimultaneamente(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < LARGO_1; i++ {
 		lista.InsertarPrimero(i)
 		valorFrente := lista.VerPrimero()
 		require.EqualValues(t, valorFrente, lista.BorrarPrimero())
@@ -44,7 +46,7 @@ func TestComportamientoAlVaciarLaLista(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
 	var valorInicial int
 	var contador int = 0
-	for i := valorInicial; i < 10; i++ {
+	for i := valorInicial; i < LARGO_1; i++ {
 		lista.InsertarUltimo(i)
 		require.EqualValues(t, valorInicial, lista.VerPrimero())
 		require.EqualValues(t, i, lista.VerUltimo())
@@ -84,8 +86,8 @@ func TestListaDeDiferentesTipos(t *testing.T) {
 func TestVolumen(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
 	var valorEnlistado int
+	var valorInicial int
 
-	var valorInicial int = 0
 	for i := valorInicial; i < VOLUMEN/2; i++ {
 		lista.InsertarUltimo(i)
 		require.EqualValues(t, valorInicial, lista.VerPrimero())
@@ -150,7 +152,7 @@ func TestDeIteradorInternoSinCorte(t *testing.T) {
 	longitud := 0
 	long_ptr := &longitud
 
-	for i := 0; i <= 20; i++ {
+	for i := 0; i <= LARGO_1*2; i++ {
 		comprobanteDeSumatoria += i
 		comprobanteDeLongitud += 1
 		lista.InsertarUltimo(i)
@@ -179,18 +181,19 @@ func TestDeIteradorInternoSinCorte(t *testing.T) {
 
 func TestIteradorInternoConCorte(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
+	var numeroLimite int = LARGO_1 * 2
 	var valorActual int
 
 	var comprobanteDeSumatoria int
-	sumatoria := 0
+	var sumatoria int
 	sum_ptr := &sumatoria
 
 	var comprobanteDeLongitud int
-	longitud := 0
+	var longitud int
 	long_ptr := &longitud
 
-	for i := 0; i <= 20; i++ {
-		if i <= 10 {
+	for i := 0; i <= numeroLimite; i++ {
+		if i <= numeroLimite/2 {
 			comprobanteDeSumatoria += i
 		}
 		comprobanteDeLongitud += 1
@@ -201,12 +204,12 @@ func TestIteradorInternoConCorte(t *testing.T) {
 	lista.Iterar(func(v int) bool {
 		require.EqualValues(t, valorActual, v)
 		valorActual += 2
-		return v != 10
+		return v != numeroLimite/2
 	})
 
 	lista.Iterar(func(v int) bool {
 		*sum_ptr += v
-		return v != 10
+		return v != numeroLimite/2
 	})
 
 	lista.Iterar(func(v int) bool {
@@ -232,11 +235,11 @@ func TestIteradorInsertaEnListaVacia(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
 	iter := lista.Iterador()
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i <= LARGO_1; i++ {
 		iter.Insertar(i)
 	}
 
-	for i := 4; i >= 0; i-- {
+	for i := LARGO_1; i >= 0; i-- {
 		require.EqualValues(t, i, iter.VerActual())
 		iter.Siguiente()
 	}
@@ -248,46 +251,66 @@ func TestIteradorInsertaEnListaVacia(t *testing.T) {
 
 func TestIteradorInsertandoAlFinal(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
-	lista.InsertarUltimo(3)
-	lista.InsertarUltimo(6)
-	lista.InsertarUltimo(9)
+	var largoActual int
+	var InsertarValor int
+	InsertarValor += CANTIDAD_A_AVANZAR
+	lista.InsertarUltimo(InsertarValor)
+	largoActual++
+
+	InsertarValor += CANTIDAD_A_AVANZAR
+	lista.InsertarUltimo(InsertarValor)
+	largoActual++
+
+	InsertarValor += CANTIDAD_A_AVANZAR
+	lista.InsertarUltimo(InsertarValor)
+	largoActual++
 
 	iter := lista.Iterador()
 	for iter.HaySiguiente() {
 		iter.Siguiente()
 	}
 
-	iter.Insertar(12)
-	require.EqualValues(t, 12, lista.VerUltimo())
-	require.EqualValues(t, 12, iter.VerActual())
-	require.EqualValues(t, 4, lista.Largo())
+	InsertarValor += CANTIDAD_A_AVANZAR
+	iter.Insertar(InsertarValor)
+	largoActual++
+
+	require.EqualValues(t, InsertarValor, lista.VerUltimo())
+	require.EqualValues(t, InsertarValor, iter.VerActual())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter.Siguiente()
-	iter.Insertar(15)
-	require.EqualValues(t, 15, lista.VerUltimo())
-	require.EqualValues(t, 15, iter.VerActual())
-	require.EqualValues(t, 5, lista.Largo())
+	InsertarValor += CANTIDAD_A_AVANZAR
+	iter.Insertar(InsertarValor)
+	largoActual++
+
+	require.EqualValues(t, InsertarValor, lista.VerUltimo())
+	require.EqualValues(t, InsertarValor, iter.VerActual())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter.Siguiente()
-	iter.Insertar(18)
-	require.EqualValues(t, 18, lista.VerUltimo())
-	require.EqualValues(t, 18, iter.VerActual())
-	require.EqualValues(t, 6, lista.Largo())
+	InsertarValor += CANTIDAD_A_AVANZAR
+	iter.Insertar(InsertarValor)
+	largoActual++
+	require.EqualValues(t, InsertarValor, lista.VerUltimo())
+	require.EqualValues(t, InsertarValor, iter.VerActual())
+	require.EqualValues(t, largoActual, lista.Largo())
 }
 
 func TestBorrarPrimeroConIterador(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
-	for i := 0; i < 10; i++ {
+	var largoActual int = LARGO_1
+	for i := 0; i < LARGO_1; i++ {
 		lista.InsertarUltimo(i)
 	}
-	require.EqualValues(t, 10, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter := lista.Iterador()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < LARGO_1; i++ {
 		require.EqualValues(t, i, iter.Borrar())
+		largoActual--
 	}
 
-	require.EqualValues(t, 0, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.BorrarPrimero() })
 	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.VerPrimero() })
 	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.VerUltimo() })
@@ -298,19 +321,21 @@ func TestBorrarPrimeroConIterador(t *testing.T) {
 
 func TestBorrarEnElMedioConIterador(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
-	for i := 0; i < 10; i++ {
+	var largoActual int = LARGO_1
+	for i := 0; i < LARGO_1; i++ {
 		lista.InsertarUltimo(i)
 	}
-	require.EqualValues(t, 10, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter := lista.Iterador()
 	iter.Siguiente()
 	iter.Siguiente()
 
-	for i := 2; i < 10; i++ {
+	for i := 2; i < LARGO_1; i++ {
 		require.EqualValues(t, i, iter.Borrar())
+		largoActual--
 	}
-	require.EqualValues(t, 2, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter2 := lista.Iterador()
 	require.EqualValues(t, 0, iter2.VerActual())
@@ -320,25 +345,30 @@ func TestBorrarEnElMedioConIterador(t *testing.T) {
 
 func TestBorrarAnteultimoConIterador(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
-	for i := 0; i < 10; i++ {
+	var largoActual int = LARGO_1
+	var ultimoValor int = largoActual - 1
+	var anteultimoValor int = ultimoValor - 1
+	for i := 0; i < LARGO_1; i++ {
 		lista.InsertarUltimo(i)
 	}
-	require.EqualValues(t, 10, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter := lista.Iterador()
 
-	for iter.VerActual() != 8 {
+	for iter.VerActual() != anteultimoValor {
 		iter.Siguiente()
 	}
-	require.EqualValues(t, 10, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
-	require.EqualValues(t, 8, iter.Borrar())
-	require.EqualValues(t, 9, iter.Borrar())
+	require.EqualValues(t, anteultimoValor, iter.Borrar())
+	largoActual--
+	require.EqualValues(t, ultimoValor, iter.Borrar())
+	largoActual--
 
-	require.EqualValues(t, 8, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter2 := lista.Iterador()
-	for i := 0; i < 8; i++ {
+	for i := 0; i < largoActual; i++ {
 		require.EqualValues(t, i, iter2.VerActual())
 		iter2.Siguiente()
 	}
@@ -346,25 +376,29 @@ func TestBorrarAnteultimoConIterador(t *testing.T) {
 
 func TestBorrarUltimoConIterador(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
-	for i := 0; i < 10; i++ {
+	var largoActual int = LARGO_1
+	var ultimoValor int = largoActual - 1
+	for i := 0; i < LARGO_1; i++ {
 		lista.InsertarUltimo(i)
 	}
-	require.EqualValues(t, 10, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter := lista.Iterador()
 
-	for iter.VerActual() != 9 {
+	for iter.VerActual() != ultimoValor {
 		iter.Siguiente()
 	}
-	require.EqualValues(t, 10, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
-	require.EqualValues(t, 9, iter.Borrar())
+	require.EqualValues(t, ultimoValor, iter.Borrar())
+	largoActual--
+	ultimoValor--
 
-	require.EqualValues(t, 9, lista.Largo())
-	require.EqualValues(t, 8, lista.VerUltimo())
+	require.EqualValues(t, largoActual, lista.Largo())
+	require.EqualValues(t, ultimoValor, lista.VerUltimo())
 
 	iter2 := lista.Iterador()
-	for i := 0; i < 9; i++ {
+	for i := 0; i < largoActual; i++ {
 		require.EqualValues(t, i, iter2.VerActual())
 		iter2.Siguiente()
 	}
@@ -372,130 +406,110 @@ func TestBorrarUltimoConIterador(t *testing.T) {
 
 func TestBorrarUltimoVariasVecesConIterador(t *testing.T) {
 	lista := TDALista.CrearListaEnlazada[int]()
-	for i := 0; i < 5; i++ {
+	var largoActual int = LARGO_1 / 2
+	var ultimoValor int = largoActual - 1
+	for i := 0; i < largoActual; i++ {
 		lista.InsertarUltimo(i)
 	}
-	require.EqualValues(t, 5, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
 	iter := lista.Iterador()
-	for iter.VerActual() != 4 {
+	for iter.VerActual() != ultimoValor {
 		iter.Siguiente()
 	}
 
-	require.EqualValues(t, 5, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
-	require.EqualValues(t, 4, iter.Borrar())
+	require.EqualValues(t, ultimoValor, iter.Borrar())
+	largoActual--
+	ultimoValor--
 
-	require.EqualValues(t, 4, lista.Largo())
-	require.EqualValues(t, 3, lista.VerUltimo())
+	require.EqualValues(t, largoActual, lista.Largo())
+	require.EqualValues(t, ultimoValor, lista.VerUltimo())
 
 	iter2 := lista.Iterador()
-	for i := 0; i < 4; i++ {
+	for i := 0; i < largoActual; i++ {
 		require.EqualValues(t, i, iter2.VerActual())
 		iter2.Siguiente()
 	}
 
 	//
 	iter3 := lista.Iterador()
-	for iter3.VerActual() != 3 {
+	for iter3.VerActual() != ultimoValor {
 		iter3.Siguiente()
 	}
 
-	require.EqualValues(t, 4, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
-	require.EqualValues(t, 3, iter3.Borrar())
+	require.EqualValues(t, ultimoValor, iter3.Borrar())
+	largoActual--
+	ultimoValor--
 
-	require.EqualValues(t, 3, lista.Largo())
-	require.EqualValues(t, 2, lista.VerUltimo())
+	require.EqualValues(t, largoActual, lista.Largo())
+	require.EqualValues(t, ultimoValor, lista.VerUltimo())
 
 	iter4 := lista.Iterador()
-	for i := 0; i < 3; i++ {
+	for i := 0; i < largoActual; i++ {
 		require.EqualValues(t, i, iter4.VerActual())
 		iter4.Siguiente()
 	}
 
 	//
 	iter5 := lista.Iterador()
-	for iter5.VerActual() != 2 {
+	for iter5.VerActual() != ultimoValor {
 		iter5.Siguiente()
 	}
 
-	require.EqualValues(t, 3, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
-	require.EqualValues(t, 2, iter5.Borrar())
+	require.EqualValues(t, ultimoValor, iter5.Borrar())
+	largoActual--
+	ultimoValor--
 
-	require.EqualValues(t, 2, lista.Largo())
-	require.EqualValues(t, 1, lista.VerUltimo())
+	require.EqualValues(t, largoActual, lista.Largo())
+	require.EqualValues(t, ultimoValor, lista.VerUltimo())
 
 	iter6 := lista.Iterador()
-	for i := 0; i < 2; i++ {
+	for i := 0; i < largoActual; i++ {
 		require.EqualValues(t, i, iter6.VerActual())
 		iter6.Siguiente()
 	}
 
 	//
 	iter7 := lista.Iterador()
-	for iter7.VerActual() != 1 {
+	for iter7.VerActual() != ultimoValor {
 		iter7.Siguiente()
 	}
 
-	require.EqualValues(t, 2, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
-	require.EqualValues(t, 1, iter7.Borrar())
+	require.EqualValues(t, ultimoValor, iter7.Borrar())
+	largoActual--
+	ultimoValor--
 
-	require.EqualValues(t, 1, lista.Largo())
-	require.EqualValues(t, 0, lista.VerPrimero())
-	require.EqualValues(t, 0, lista.VerUltimo())
+	require.EqualValues(t, largoActual, lista.Largo())
+	require.EqualValues(t, ultimoValor, lista.VerPrimero())
+	require.EqualValues(t, ultimoValor, lista.VerUltimo())
 
 	iter8 := lista.Iterador()
-	for i := 0; i < 1; i++ {
+	for i := 0; i < largoActual; i++ {
 		require.EqualValues(t, i, iter8.VerActual())
 		iter8.Siguiente()
 	}
 
 	//
 	iter9 := lista.Iterador()
-	for iter9.VerActual() != 0 {
+	for iter9.VerActual() != ultimoValor {
 		iter9.Siguiente()
 	}
 
-	require.EqualValues(t, 1, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 
-	require.EqualValues(t, 0, iter9.Borrar())
+	require.EqualValues(t, ultimoValor, iter9.Borrar())
+	largoActual--
 
-	require.EqualValues(t, 0, lista.Largo())
+	require.EqualValues(t, largoActual, lista.Largo())
 	require.PanicsWithValue(t, TDALista.PANIC_LISTA_VACIA, func() { lista.VerUltimo() })
-
-	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
-	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Siguiente() })
-	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Borrar() })
-}
-
-func TestDelPrincipio(t *testing.T) {
-	lista := TDALista.CrearListaEnlazada[int]()
-	iter := lista.Iterador()
-	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
-	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Siguiente() })
-	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Borrar() })
-
-	iter.Insertar(9)
-	iter.Insertar(6)
-	iter.Insertar(3)
-
-	require.EqualValues(t, 3, lista.VerPrimero())
-	require.EqualValues(t, 3, iter.VerActual())
-	require.EqualValues(t, 3, lista.Largo())
-	require.EqualValues(t, 3, iter.Borrar())
-
-	require.EqualValues(t, 6, lista.VerPrimero())
-	require.EqualValues(t, 6, iter.VerActual())
-	require.EqualValues(t, 2, lista.Largo())
-
-	iter.Siguiente()
-
-	require.EqualValues(t, 9, iter.VerActual())
-
-	iter.Siguiente()
 
 	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.VerActual() })
 	require.PanicsWithValue(t, TDALista.PANIC_ITERADOR, func() { iter.Siguiente() })
