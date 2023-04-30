@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	TDAVotos "tp1/diseno_alumnos/votos"
+	TDACola "tdas/cola"
+	"tp1/errores"
+	"tp1/votos"
 )
 
-func mostrarError(mensaje string) {
-	fmt.Fprintf(os.Stderr, "%s\n", mensaje)
-	os.Exit(1)
+func mostrarError(err string) {
+	fmt.Fprintf(os.Stderr, "%s\n", err)
 }
 
 func mostrarSalida(mensaje string) {
@@ -22,17 +23,33 @@ func mostrarSalida(mensaje string) {
 func abrirArchivo(archivo string) *os.File {
 	file, err := os.Open(archivo)
 	if err != nil {
-		mostrarError("ERROR: Lectura de archivos")
+		mostrarError(new(errores.ErrorLeerArchivo).Error())
+		os.Exit(1)
 	}
-	// defer file.Close()
 	return file
 }
 
+func buscarDni(archivo *os.File, dni string) bool {
+	s := bufio.NewScanner(archivo)
+	var found bool = false
+	for s.Scan() {
+		linea := s.Text()
+		if strings.TrimSpace(linea) == dni {
+			found = true
+		}
+	}
+	return found
+}
+
 func main() {
+	// pilaVotos := TDAPila.CrearPilaDinamica[votos.Voto]()
+	TDACola.CrearColaEnlazada[votos.Votante]()
+
 	scanner := bufio.NewScanner(os.Stdin)
 	var args = os.Args[1:]
 	if len(args) < 2 {
-		mostrarError("ERROR: Faltan parámetros")
+		mostrarError(new(errores.ErrorParametros).Error())
+		os.Exit(1)
 	}
 
 	lista_candidatos := args[0]
@@ -45,7 +62,7 @@ func main() {
 		lista_partido := strings.Split(linea, ",")
 		partido := lista_partido[0]
 		candidatos := [3]string{lista_partido[1], lista_partido[2], lista_partido[3]}
-		TDAVotos.CrearPartido(partido, candidatos)
+		votos.CrearPartido(partido, candidatos)
 	}
 	file_padrones := abrirArchivo(lista_padrones)
 
@@ -58,25 +75,22 @@ func main() {
 		switch cmd {
 		case "ingresar":
 			if len(params) < 1 {
-				mostrarError("ERROR: Falta parámetro")
-			}
-			dni := params[0]
-			dniEntero, err := strconv.Atoi(dni)
-			if err != nil || dniEntero <= 0 {
-				mostrarError("ERROR: DNI incorrecto")
-			}
-			s := bufio.NewScanner(file_padrones)
-			for s.Scan() {
-				linea := s.Text()
-				if strings.Contains(linea, dni) {
+				mostrarError(new(errores.ErrorParametros).Error())
+			} else {
+				dni := params[0]
+				dniEntero, err := strconv.Atoi(dni)
+				if err != nil || dniEntero <= 0 {
+					mostrarError(new(errores.DNIError).Error())
+				}
+				if buscarDni(file_padrones, dni) {
 					mostrarSalida("OK")
-					TDAVotos.CrearVotante(dniEntero)
+					votos.CrearVotante(dniEntero)
+					file_padrones.Seek(0, 0)
 				} else {
-					mostrarError("ERROR: DNI fuera del padrón")
+					mostrarError(new(errores.DNIFueraPadron).Error())
 				}
 
 			}
-
 		}
 		defer file_candidatos.Close()
 		defer file_padrones.Close()
