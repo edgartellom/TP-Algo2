@@ -74,23 +74,24 @@ func main() {
 
 		switch cmd {
 		case "ingresar":
-			if len(params) < 1 {
+			if len(params) < 1 || params[0] == "" {
 				mostrarError(new(errores.ErrorParametros).Error())
 			} else {
 				dni := params[0]
 				dniEntero, err := strconv.Atoi(dni)
 				if err != nil || dniEntero <= 0 {
 					mostrarError(new(errores.DNIError).Error())
-				}
-				if buscarDni(file_padrones, dni) {
-					mostrarSalida("OK")
-					votos.CrearVotante(dniEntero)
-					file_padrones.Seek(0, 0)
 				} else {
-					mostrarError(new(errores.DNIFueraPadron).Error())
+					if buscarDni(file_padrones, dni) {
+						mostrarSalida("OK")
+						votos.CrearVotante(dniEntero)
+					} else {
+						mostrarError(new(errores.DNIFueraPadron).Error())
+					}
 				}
-
 			}
+			file_padrones.Seek(0, 0)
+			break
 		}
 		defer file_candidatos.Close()
 		defer file_padrones.Close()
