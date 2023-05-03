@@ -1,7 +1,14 @@
 package votos
 
+import (
+	e "rerepolez/errores"
+	"tdas/pila"
+)
+
 type votanteImplementacion struct {
-	dni int
+	dni   int
+	voto  *Voto
+	votos pila.Pila[int]
 }
 
 func CrearVotante(dni int) Votante {
@@ -20,7 +27,14 @@ func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) erro
 }
 
 func (votante *votanteImplementacion) Deshacer() error {
-	return nil
+	if votante.votos.EstaVacia() {
+		return e.ErrorNoHayVotosAnteriores{}
+	} else {
+		// votoAnterior := votante.votos.Desapilar()
+
+		// votante.voto = TipoVoto(votoAnterior)
+		return nil
+	}
 }
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
