@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strings"
 
@@ -21,16 +22,17 @@ func main() {
 	file_candidatos := f.AbrirArchivo(args[0])
 	file_padrones := f.AbrirArchivo(args[1])
 
-	padrones := f.GuardarArchivoPadrones(file_padrones)
-	candidatos := f.GuardarArchivoCandidatos(file_candidatos)
+	votantes := f.ObtenerVotantes(file_padrones)
+	partidos := f.ObtenerPartidos(file_candidatos)
 
 	defer file_candidatos.Close()
 	defer file_padrones.Close()
 
-	for _, lista_partido := range candidatos {
-		partido := lista_partido[0]
-		candidatos := [votos.CANT_VOTACION]string{lista_partido[1], lista_partido[2], lista_partido[3]}
-		votos.CrearPartido(partido, candidatos)
+	for _, v := range votantes {
+		fmt.Printf("%+v\n", v)
+	}
+	for _, p := range partidos {
+		fmt.Printf("%+v\n", p)
 	}
 
 	for scanner.Scan() {
@@ -45,8 +47,8 @@ func main() {
 				numeroDni := params[0]
 				dni := f.ObtenerDniEntero(numeroDni)
 				if f.DniValido(dni) {
-					if f.ExisteDni(padrones, dni) {
-						votante := votos.CrearVotante(dni)
+					votante := f.BuscarVotante(votantes, dni)
+					if votante != nil {
 						colaVotantes.Encolar(votante)
 						f.MostrarSalida("OK")
 					}

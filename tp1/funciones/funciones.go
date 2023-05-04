@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	e "rerepolez/errores"
+	"rerepolez/votos"
 )
 
 func ObtenerParametrosEjecucion() []string {
@@ -37,32 +38,35 @@ func AbrirArchivo(archivo string) *os.File {
 	return file
 }
 
-func GuardarArchivoPadrones(archivo *os.File) []int {
-	var padrones []int
+func ObtenerVotantes(archivo *os.File) []votos.Votante {
+	var votantes []votos.Votante
 	s := bufio.NewScanner(archivo)
 	for s.Scan() {
 		padron := s.Text()
 		dni := ObtenerDniEntero(padron)
-		padrones = append(padrones, dni)
+		votante := votos.CrearVotante(dni)
+		votantes = append(votantes, votante)
 	}
-	sort.Slice(padrones, func(i, j int) bool {
-		return padrones[i] < padrones[j]
+
+	sort.Slice(votantes, func(i, j int) bool {
+		return votantes[i].LeerDNI() < votantes[j].LeerDNI()
 	})
 
-	fmt.Println(padrones)
-	return padrones
+	return votantes
 }
 
-func GuardarArchivoCandidatos(archivo *os.File) [][]string {
-	var lista_partidos [][]string
+func ObtenerPartidos(archivo *os.File) []votos.Partido {
+	var listaPartidos []votos.Partido
 	s := bufio.NewScanner(archivo)
 	for s.Scan() {
-		linea := s.Text()
-		lista_partido := strings.Split(linea, ",")
-		lista_partidos = append(lista_partidos, lista_partido)
+		lineaPartido := s.Text()
+		listaPartido := strings.Split(lineaPartido, ",")
+		nombre, candidatos := listaPartido[0], [votos.CANT_VOTACION]string(listaPartido[1:])
+		partido := votos.CrearPartido(nombre, candidatos)
+		listaPartidos = append(listaPartidos, partido)
 	}
-	fmt.Println(lista_partidos)
-	return lista_partidos
+
+	return listaPartidos
 }
 
 func DniValido(dni int) bool {
@@ -74,20 +78,20 @@ func DniValido(dni int) bool {
 	}
 }
 
-func ExisteDni(padrones []int, dni int) bool {
-	if len(padrones) == 0 {
+func BuscarVotante(votantes []votos.Votante, dni int) votos.Votante {
+	if len(votantes) == 0 {
 		MostrarSalida(new(e.DNIFueraPadron).Error())
-		return false
+		return nil
 	}
 
-	medio := len(padrones) / 2
+	medio := len(votantes) / 2
 
-	if padrones[medio] == dni {
-		return true
-	} else if padrones[medio] < dni {
-		return ExisteDni(padrones[medio+1:], dni)
+	if votantes[medio].LeerDNI() == dni {
+		return votantes[medio]
+	} else if votantes[medio].LeerDNI() < dni {
+		return BuscarVotante(votantes[medio+1:], dni)
 	} else {
-		return ExisteDni(padrones[:medio], dni)
+		return BuscarVotante(votantes[:medio], dni)
 	}
 }
 
