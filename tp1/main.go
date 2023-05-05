@@ -2,133 +2,77 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
+	errores "rerepolez/errores"
+	funcAux "rerepolez/funciones"
+	votos "rerepolez/votos"
 	TDACola "tdas/cola"
-	"tp1/errores"
-	. "tp1/votos"
 )
 
-func mostrarError(err string) {
-	fmt.Fprintf(os.Stderr, "%s\n", err)
-}
-
-func mostrarSalida(mensaje string) {
-	fmt.Fprintf(os.Stdout, "%s\n", mensaje)
-}
-
-func abrirArchivo(archivo string) *os.File {
-	file, err := os.Open(archivo)
-	if err != nil {
-		mostrarError(new(errores.ErrorLeerArchivo).Error())
-		os.Exit(1)
-	}
-	return file
-}
-
-func convertirValor(valor int) TipoVoto {
-	switch valor {
-	case 0:
-		return PRESIDENTE
-	case 1:
-		return GOBERNADOR
-	case 2:
-		return INTENDENTE
-	}
-	return LISTA_IMPUGNA
-}
-
-func buscarDni(archivo *os.File, dni string) bool {
-	s := bufio.NewScanner(archivo)
-	var found bool = false
-	for s.Scan() {
-		linea := s.Text()
-		if strings.TrimSpace(linea) == dni {
-			found = true
-		}
-	}
-	return found
-}
-
-func obtenerPadrones(ruta string) []int {
-	var padrones []int
-	archivoPadrones := abrirArchivo(ruta)
-	s := bufio.NewScanner(archivoPadrones)
-	for s.Scan() {
-		dni := s.Text()
-		numeroDNI, _ := strconv.Atoi(dni) // Pensar: Si el archivo tiene un documento "1ac434"
-		padrones = append(padrones, numeroDNI)
-	}
-	return padrones
-}
-
-func obtenerPartidos(ruta string) []Partido {
-	var partidos []Partido
-	archivoPartidos := abrirArchivo(ruta)
-	s := bufio.NewScanner(archivoPartidos)
-	for s.Scan() {
-		lineaDePartido := s.Text() // split de las lineas, creo los partidos con las lineas, appendeo los partidos creados
-		partidoEnFormaDeLista := strings.Split(lineaDePartido, ",")
-		nombre, candidatos := partidoEnFormaDeLista[0], [3]string(partidoEnFormaDeLista[1:])
-		partido := CrearPartido(nombre, candidatos)
-		partidos = append(partidos, partido)
-	}
-	return partidos
-}
-
 func main() {
-	TDACola.CrearColaEnlazada[int]()
+	colaDeVotacion := TDACola.CrearColaEnlazada[votos.Votante]()
+	var votantesQueYaVotaron []int
 
 	scanner := bufio.NewScanner(os.Stdin)
-	var args = os.Args[1:]
-	if len(args) < 2 {
-		mostrarError(new(errores.ErrorParametros).Error())
-		os.Exit(1)
+	var parametros []string = os.Args[1:]
+	if len(parametros) < 2 {
+		funcAux.MostrarError(new(errores.ErrorParametros))
 	}
 
-	ruta_partidos := args[0]
-	ruta_padrones := args[1]
+	rutaPartidos := parametros[0]
+	rutaPadrones := parametros[1]
 
-	lista_partidos := obtenerPartidos(ruta_partidos)
-	lista_padrones := obtenerPadrones(ruta_padrones)
-
-	/* ESTOS PRINT SON PARA QUE NO CHILLE EL VSCODE*/
-
-	fmt.Println(lista_partidos) // ESTE SE MUESTRA RARO PORQUE SON STRUCTS
-	fmt.Println(lista_padrones) // ESTE SE MUESTRA BIEN
+	listaDePartidos := funcAux.ObtenerPartidos(rutaPartidos)
+	listaDePadrones := funcAux.ObtenerPadrones(rutaPadrones)
 
 	for scanner.Scan() {
-		texto := scanner.Text()
-		palabras := strings.Split(texto, " ")
-		cmd := palabras[0]
-		params := palabras[1:]
+		entrada := scanner.Text()
+		entradaSeparada := strings.Split(entrada, " ")
+		cmd := entradaSeparada[0]
 
 		switch cmd {
 		case "ingresar":
-			if len(params) < 1 || params[0] == "" {
-				mostrarError(new(errores.ErrorParametros).Error())
-			} else {
-				dni := params[0]
-				dniEntero, err := strconv.Atoi(dni)
-				if err != nil || dniEntero <= 0 {
-					mostrarError(new(errores.DNIError).Error())
-					// } else {
-					// 	if buscarDni(file_padrones, dni) {
-					// 		mostrarSalida("OK")
-					// 		votos.CrearVotante(dniEntero)
-					// 	} else {
-					// 		mostrarError(new(errores.DNIFueraPadron).Error())
-					// 	}
-				}
+			documento := entradaSeparada[1]
+			validez, salida := funcAux.VerificarDNI(documento, listaDePadrones)
+			if !validez {
+				funcAux.MostrarSalida(salida)
+				continue
 			}
-			break
-			/*
-				CUANDO SE HAGA EL CASE VOTAR: EL TERCER PARAMETRO ES EL NUMERO DE PARTIDO
-				ENTONCES USAS LA FUNCION "convertirValor(tercerParametro)"
-			*/
+			numeroDeDocumento, _ := strconv.Atoi(documento)
+			votantesQueYaVotaron = append(votantesQueYaVotaron, numeroDeDocumento)
+			votante := votos.CrearVotante(numeroDeDocumento)
+			colaDeVotacion.Encolar(votante)
+			funcAux.MostrarSalida(salida)
+		case "votar":
+			tipoVoto := entradaSeparada[1]
+			numeroDeLista := entradaSeparada[2]
+			validez, salida := funcAux.VerificarVoto(tipoVoto, numeroDeLista, colaDeVotacion, votantesQueYaVotaron, listaDePartidos)
+			if !validez {
+				funcAux.MostrarSalida(salida)
+				continue
+			}
+			tipo := funcAux.ConvertirEntradaATipoVoto(tipoVoto)
+			alternativa, _ := strconv.Atoi(numeroDeLista)
+			votante := colaDeVotacion.VerPrimero()
+			votante.Votar(tipo, alternativa)
+			funcAux.MostrarSalida(salida)
+		case "deshacer":
+			validez, salida := funcAux.VerificarColaYVotante(colaDeVotacion, votantesQueYaVotaron)
+			if !validez {
+				funcAux.MostrarSalida(salida)
+				continue
+			}
+			votante := colaDeVotacion.VerPrimero()
+			err := votante.Deshacer()
+			if err != nil {
+				funcAux.MostrarSalida(err.Error())
+			}
+			funcAux.MostrarSalida(salida)
+		case "fin-votar":
+
 		}
 	}
 }
