@@ -1,26 +1,26 @@
 package votos
 
 import (
-	"rerepolez/errores"
+	errores "rerepolez/errores"
 	TDAPila "tdas/pila"
 )
 
 type votanteImplementacion struct {
-	dni             int
-	yaVoto          bool
-	votoActual      *Voto
-	votoInicial     *Voto
-	votosRealizados TDAPila.Pila[*Voto]
+	votosRealizados    TDAPila.Pila[*Voto]
+	votoInicial        *Voto
+	votoActual         *Voto
+	votanteFraudulento bool
+	dni                int
 }
 
 func CrearVotante(dni int) Votante {
 	votante := new(votanteImplementacion)
+
 	votante.dni = dni
 	votante.votosRealizados = TDAPila.CrearPilaDinamica[*Voto]()
-
 	votante.votoInicial = new(Voto)
-
 	votante.votoActual = new(Voto)
+
 	votante.votosRealizados.Apilar(votante.votoInicial)
 	return votante
 }
@@ -30,27 +30,28 @@ func (votante votanteImplementacion) LeerDNI() int {
 }
 
 func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) error {
-	copiaDelVoto := copiarVoto(*votante.votoActual)
-	(*votante).votosRealizados.Apilar(copiaDelVoto)
+	copiaDelVotoActual := copiarVotoActual(*votante.votoActual)
+	(*votante).votosRealizados.Apilar(copiaDelVotoActual)
+
 	if alternativa == LISTA_IMPUGNA {
 		(*votante).votoActual.Impugnado = true
 	}
 	(*votante).votoActual.VotoPorTipo[tipo] = alternativa
 
-	return votante.comprobarSiYaVoto()
+	return votante.comprobarVotanteFraudulento()
 }
 
 func (votante *votanteImplementacion) Deshacer() error {
 	if votante.votosRealizados.VerTope() == votante.votoInicial {
-		errror := new(errores.ErrorNoHayVotosAnteriores)
-		return errror
+		err := new(errores.ErrorNoHayVotosAnteriores)
+		return err
 	}
 	(*votante).votoActual = (*votante).votosRealizados.Desapilar()
 
-	return votante.comprobarSiYaVoto()
+	return votante.comprobarVotanteFraudulento()
 }
 
-func copiarVoto(votoDelVotante Voto) *Voto {
+func copiarVotoActual(votoDelVotante Voto) *Voto {
 	copia := new(Voto)
 	copia.Impugnado = votoDelVotante.Impugnado
 	copia.VotoPorTipo = votoDelVotante.VotoPorTipo
@@ -58,18 +59,18 @@ func copiarVoto(votoDelVotante Voto) *Voto {
 }
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
-	errror := votante.comprobarSiYaVoto()
-	if errror == nil {
-		votante.yaVoto = true
+	err := votante.comprobarVotanteFraudulento()
+	if err == nil {
+		votante.votanteFraudulento = true
 	}
-	return *votante.votoActual, errror
+	return *votante.votoActual, err
 }
 
-func (votante votanteImplementacion) comprobarSiYaVoto() error {
-	if votante.yaVoto {
-		errror := new(errores.ErrorVotanteFraudulento)
-		errror.Dni = votante.LeerDNI()
-		return errror
+func (votante votanteImplementacion) comprobarVotanteFraudulento() error {
+	if votante.votanteFraudulento {
+		err := new(errores.ErrorVotanteFraudulento)
+		err.Dni = votante.LeerDNI()
+		return err
 	}
 	return nil
 }
