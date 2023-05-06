@@ -13,17 +13,6 @@ type partidoEnBlanco struct {
 	votosActuales [3]int
 }
 
-/*
-PARTIDO : NUMERO DE LISTA: 1
-		  NOMBRE: LOS GATOS
-		  CANDIDATOS: [Mondi, Viena, Mrużka] ===> SIENDO: Mondi  PRESIDENTE (TipoVoto 0),
-															Viena  GOBERNADOR (TipoVoto 1),
-															Mruźka INTENDENTE (TipoVoto 2).
-			VOTOS
-			  A     : [  0  ,   0  ,   0   ]
-		  CANDIDATO
-*/
-
 func CrearPartido(nombre string, candidatos [CANT_VOTACION]string) Partido {
 	partido := new(partidoImplementacion)
 
@@ -53,7 +42,10 @@ func (partido *partidoImplementacion) VotadoPara(tipo TipoVoto) {
 }
 
 func (partido partidoImplementacion) ObtenerResultado(tipo TipoVoto) string {
-	return fmt.Sprintf("%s - %s: %d votos\n", partido.nombrePartido, partido.candidatosDelPartido[tipo], partido.votosActuales[tipo])
+	if partido.votosActuales[tipo] == 1 {
+		return fmt.Sprintf("%s - %s: %d voto", partido.nombrePartido, partido.candidatosDelPartido[tipo], partido.votosActuales[tipo])
+	}
+	return fmt.Sprintf("%s - %s: %d votos", partido.nombrePartido, partido.candidatosDelPartido[tipo], partido.votosActuales[tipo])
 }
 
 func (blanco *partidoEnBlanco) VotadoPara(tipo TipoVoto) {
@@ -61,5 +53,8 @@ func (blanco *partidoEnBlanco) VotadoPara(tipo TipoVoto) {
 }
 
 func (blanco partidoEnBlanco) ObtenerResultado(tipo TipoVoto) string {
-	return fmt.Sprintf("%s: %d votos\n", blanco.nombrePartido, blanco.votosActuales[tipo])
+	if blanco.votosActuales[tipo] == 1 {
+		return fmt.Sprintf("%s: %d voto", blanco.nombrePartido, blanco.votosActuales[tipo])
+	}
+	return fmt.Sprintf("%s: %d votos", blanco.nombrePartido, blanco.votosActuales[tipo])
 }

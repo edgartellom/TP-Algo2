@@ -7,6 +7,7 @@ import (
 
 type votanteImplementacion struct {
 	dni             int
+	yaVoto          bool
 	votoActual      *Voto
 	votoInicial     *Voto
 	votosRealizados TDAPila.Pila[*Voto]
@@ -17,9 +18,10 @@ func CrearVotante(dni int) Votante {
 	votante.dni = dni
 	votante.votosRealizados = TDAPila.CrearPilaDinamica[*Voto]()
 
-	votoInicial := new(Voto)
-	votante.votoInicial = votoInicial
-	votante.votosRealizados.Apilar(votoInicial)
+	votante.votoInicial = new(Voto)
+
+	votante.votoActual = new(Voto)
+	votante.votosRealizados.Apilar(votante.votoInicial)
 	return votante
 }
 
@@ -28,15 +30,14 @@ func (votante votanteImplementacion) LeerDNI() int {
 }
 
 func (votante *votanteImplementacion) Votar(tipo TipoVoto, alternativa int) error {
-	votoDelVotante := new(Voto)
+	copiaDelVoto := copiarVoto(*votante.votoActual)
+	(*votante).votosRealizados.Apilar(copiaDelVoto)
 	if alternativa == LISTA_IMPUGNA {
-		votoDelVotante.Impugnado = true
+		(*votante).votoActual.Impugnado = true
 	}
-	votoDelVotante.VotoPorTipo[tipo] = alternativa
-	(*votante).votoActual = votoDelVotante
-	(*votante).votosRealizados.Apilar(votoDelVotante)
+	(*votante).votoActual.VotoPorTipo[tipo] = alternativa
 
-	return nil // PENSAR EL ERROR!!!
+	return votante.comprobarSiYaVoto()
 }
 
 func (votante *votanteImplementacion) Deshacer() error {
@@ -44,11 +45,31 @@ func (votante *votanteImplementacion) Deshacer() error {
 		errror := new(errores.ErrorNoHayVotosAnteriores)
 		return errror
 	}
-	(*votante).votosRealizados.Desapilar()
-	(*votante).votoActual = votante.votosRealizados.VerTope()
-	return nil
+	(*votante).votoActual = (*votante).votosRealizados.Desapilar()
+
+	return votante.comprobarSiYaVoto()
+}
+
+func copiarVoto(votoDelVotante Voto) *Voto {
+	copia := new(Voto)
+	copia.Impugnado = votoDelVotante.Impugnado
+	copia.VotoPorTipo = votoDelVotante.VotoPorTipo
+	return copia
 }
 
 func (votante *votanteImplementacion) FinVoto() (Voto, error) {
-	return *votante.votoActual, nil // PENSAR EL ERROR!!!
+	errror := votante.comprobarSiYaVoto()
+	if errror == nil {
+		votante.yaVoto = true
+	}
+	return *votante.votoActual, errror
+}
+
+func (votante votanteImplementacion) comprobarSiYaVoto() error {
+	if votante.yaVoto {
+		errror := new(errores.ErrorVotanteFraudulento)
+		errror.Dni = votante.LeerDNI()
+		return errror
+	}
+	return nil
 }

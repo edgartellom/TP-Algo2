@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -12,9 +13,17 @@ import (
 	TDACola "tdas/cola"
 )
 
+const (
+	INGRESAR       = "ingresar"
+	VOTAR          = "votar"
+	DESHACER       = "deshacer"
+	FINALIZAR_VOTO = "fin-votar"
+)
+
 func main() {
 	colaDeVotacion := TDACola.CrearColaEnlazada[votos.Votante]()
 	var votantesQueYaVotaron []int
+	var contadorImpugnados int
 
 	scanner := bufio.NewScanner(os.Stdin)
 	var parametros []string = os.Args[1:]
@@ -26,7 +35,7 @@ func main() {
 	rutaPadrones := parametros[1]
 
 	listaDePartidos := funcAux.ObtenerPartidos(rutaPartidos)
-	listaDePadrones := funcAux.ObtenerPadrones(rutaPadrones)
+	listaDeVotantes := funcAux.ObtenerVotantes(rutaPadrones)
 
 	for scanner.Scan() {
 		entrada := scanner.Text()
@@ -34,19 +43,19 @@ func main() {
 		cmd := entradaSeparada[0]
 
 		switch cmd {
-		case "ingresar":
+		case INGRESAR:
 			documento := entradaSeparada[1]
-			validez, salida := funcAux.VerificarDNI(documento, listaDePadrones)
+			validez, salida := funcAux.VerificarDNI(documento, listaDeVotantes)
 			if !validez {
 				funcAux.MostrarSalida(salida)
 				continue
 			}
 			numeroDeDocumento, _ := strconv.Atoi(documento)
-			votantesQueYaVotaron = append(votantesQueYaVotaron, numeroDeDocumento)
 			votante := votos.CrearVotante(numeroDeDocumento)
 			colaDeVotacion.Encolar(votante)
 			funcAux.MostrarSalida(salida)
-		case "votar":
+
+		case VOTAR:
 			tipoVoto := entradaSeparada[1]
 			numeroDeLista := entradaSeparada[2]
 			validez, salida := funcAux.VerificarVoto(tipoVoto, numeroDeLista, colaDeVotacion, votantesQueYaVotaron, listaDePartidos)
@@ -59,7 +68,8 @@ func main() {
 			votante := colaDeVotacion.VerPrimero()
 			votante.Votar(tipo, alternativa)
 			funcAux.MostrarSalida(salida)
-		case "deshacer":
+
+		case DESHACER:
 			validez, salida := funcAux.VerificarColaYVotante(colaDeVotacion, votantesQueYaVotaron)
 			if !validez {
 				funcAux.MostrarSalida(salida)
@@ -69,44 +79,49 @@ func main() {
 			err := votante.Deshacer()
 			if err != nil {
 				funcAux.MostrarSalida(err.Error())
+				continue
 			}
 			funcAux.MostrarSalida(salida)
-		case "fin-votar":
 
+		case FINALIZAR_VOTO:
+			validez, salida := funcAux.VerificarColaYVotante(colaDeVotacion, votantesQueYaVotaron)
+			if !validez {
+				funcAux.MostrarSalida(salida)
+				continue
+			}
+			votante := colaDeVotacion.Desencolar()
+			voto, err := votante.FinVoto()
+			if err != nil {
+				funcAux.MostrarSalida(err.Error())
+				continue
+			}
+
+			votantesQueYaVotaron = append(votantesQueYaVotaron, votante.LeerDNI())
+			funcAux.MostrarSalida(salida)
+
+			if voto.Impugnado {
+				contadorImpugnados++
+				continue
+			}
+			var tipo votos.TipoVoto
+			for i := 0; i < len(voto.VotoPorTipo); i++ {
+				numeroDeLista := voto.VotoPorTipo[i]
+				listaDePartidos[numeroDeLista].VotadoPara(tipo)
+				tipo++
+			}
 		}
 	}
+	if !colaDeVotacion.EstaVacia() {
+		errror := new(errores.ErrorCiudadanosSinVotar)
+		for !colaDeVotacion.EstaVacia() {
+			colaDeVotacion.Desencolar()
+		}
+		fmt.Println(errror)
+	}
+	var tipo votos.TipoVoto
+	for i := tipo; i < 3; i++ {
+		funcAux.ImprimirTipoCompleto(tipo, listaDePartidos)
+		tipo++
+	}
+	funcAux.ImprimirImpugnadosSegunCantidad(contadorImpugnados)
 }
-
-/* --------------------------------------------------------------------------------------------*/
-
-/* MAIN POR SI QUIERES VER QUE FUNCIONA TODO BIEN EL CONSEGUIR LISTA DE PARTIDOS Y DE PADRONES */
-
-/* --------------------------------------------------------------------------------------------*/
-
-// func main() {
-// 	TDACola.CrearColaEnlazada[int]()
-
-// 	bufio.NewScanner(os.Stdin)
-// 	var args = os.Args[1:]
-// 	if len(args) < 2 {
-// 		mostrarError(new(errores.ErrorParametros).Error())
-// 		os.Exit(1)
-// 	}
-
-// 	ruta_partidos := args[0]
-// 	ruta_padrones := args[1]
-
-// 	// fmt.Println(scanner)
-// 	fmt.Println(ruta_partidos)
-// 	lista_partidos := obtenerPartidos(ruta_partidos)
-// 	for _, partido := range lista_partidos {
-// 		tipo1, tipo2, tipo3 := convertirValor(0), convertirValor(1), convertirValor(2)
-// 		fmt.Println(partido.ObtenerResultado(tipo1))
-// 		fmt.Println(partido.ObtenerResultado(tipo2))
-// 		fmt.Println(partido.ObtenerResultado(tipo3))
-// 	}
-// 	fmt.Println()
-// 	fmt.Println(ruta_padrones)
-// 	lista_padrones := obtenerPadrones(ruta_padrones)
-// 	fmt.Println(lista_padrones)
-// }
