@@ -26,12 +26,6 @@ func crearNodo[T any](dato T) *nodoLista[T] {
 	return nodo
 }
 
-func comprobarLista[T any](lista listaEnlazada[T]) {
-	if lista.EstaVacia() {
-		panic(PANIC_LISTA_VACIA)
-	}
-}
-
 func CrearListaEnlazada[T any]() Lista[T] {
 	return new(listaEnlazada[T])
 }
@@ -40,13 +34,19 @@ func (lista listaEnlazada[T]) EstaVacia() bool {
 	return lista.largo == 0
 }
 
+func (lista listaEnlazada[T]) comprobarLista() {
+	if lista.EstaVacia() {
+		panic(PANIC_LISTA_VACIA)
+	}
+}
+
 func (lista listaEnlazada[T]) VerPrimero() T {
-	comprobarLista(lista)
+	lista.comprobarLista()
 	return lista.primero.dato
 }
 
 func (lista listaEnlazada[T]) VerUltimo() T {
-	comprobarLista(lista)
+	lista.comprobarLista()
 	return lista.ultimo.dato
 }
 
@@ -55,7 +55,7 @@ func (lista listaEnlazada[T]) Largo() int {
 }
 
 func (lista *listaEnlazada[T]) BorrarPrimero() T {
-	comprobarLista(*lista)
+	lista.comprobarLista()
 	dato := lista.primero.dato
 	lista.primero = lista.primero.siguiente
 	lista.largo--
@@ -66,11 +66,10 @@ func (lista *listaEnlazada[T]) InsertarUltimo(elemento T) {
 	nuevo := crearNodo(elemento)
 	if lista.EstaVacia() {
 		lista.primero = nuevo
-		lista.ultimo = nuevo
 	} else {
 		lista.ultimo.siguiente = nuevo
-		lista.ultimo = nuevo
 	}
+	lista.ultimo = nuevo
 	lista.largo++
 }
 
@@ -97,23 +96,23 @@ func (lista *listaEnlazada[T]) Iterador() IteradorLista[T] {
 	return iter
 }
 
-func comprobarIterador[T any](iter *iterListaEnlazada[T]) {
+func (iter *iterListaEnlazada[T]) HaySiguiente() bool {
+	return iter.actual != nil
+}
+
+func (iter iterListaEnlazada[T]) comprobarIterador() {
 	if !iter.HaySiguiente() {
 		panic(PANIC_ITERADOR)
 	}
 }
 
-func (iter *iterListaEnlazada[T]) HaySiguiente() bool {
-	return iter.actual != nil
-}
-
 func (iter *iterListaEnlazada[T]) VerActual() T {
-	comprobarIterador(iter)
+	iter.comprobarIterador()
 	return iter.actual.dato
 }
 
 func (iter *iterListaEnlazada[T]) Siguiente() {
-	comprobarIterador(iter)
+	iter.comprobarIterador()
 	iter.anterior = iter.actual
 	iter.actual = iter.actual.siguiente
 }
@@ -135,7 +134,7 @@ func (iter *iterListaEnlazada[T]) Insertar(elemento T) {
 }
 
 func (iter *iterListaEnlazada[T]) Borrar() T {
-	comprobarIterador(iter)
+	iter.comprobarIterador()
 	dato := iter.actual.dato
 	if iter.actual == iter.lista.primero {
 		iter.lista.BorrarPrimero()

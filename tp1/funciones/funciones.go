@@ -4,102 +4,226 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 
-	e "rerepolez/errores"
-	"rerepolez/votos"
+	errores "rerepolez/errores"
+	votos "rerepolez/votos"
+	TDACola "tdas/cola"
 )
 
-func ObtenerParametrosEjecucion() []string {
-	var args = os.Args[1:]
-	if len(args) < 2 {
-		MostrarSalida(new(e.ErrorParametros).Error())
-		os.Exit(1)
-	}
-	return args
+const SALIDA_EXITOSA = "OK"
+
+func MostrarError(err error) {
+	fmt.Fprintln(os.Stdout, err)
+	os.Exit(1)
 }
 
-// func MostrarError(err string) {
-// 	fmt.Fprintf(os.Stderr, "%s\n", err)
-// }
-
-func MostrarSalida(salida string) {
-	fmt.Fprintf(os.Stdout, "%s\n", salida)
+func MostrarSalida(mensaje string) {
+	fmt.Fprintln(os.Stdout, mensaje)
 }
 
-func AbrirArchivo(archivo string) *os.File {
-	file, err := os.Open(archivo)
+func abrirArchivo(ruta string) *os.File {
+	archivo, err := os.Open(ruta)
 	if err != nil {
-		MostrarSalida(new(e.ErrorLeerArchivo).Error())
-		os.Exit(1)
+		MostrarError(new(errores.ErrorLeerArchivo))
 	}
-	return file
+	return archivo
 }
 
-func ObtenerVotantes(archivo *os.File) []votos.Votante {
-	var votantes []votos.Votante
-	s := bufio.NewScanner(archivo)
-	for s.Scan() {
-		padron := s.Text()
-		dni := ObtenerDniEntero(padron)
-		votante := votos.CrearVotante(dni)
-		votantes = append(votantes, votante)
+func ObtenerPartidos(ruta string) []votos.Partido {
+	archivoDePartidos := abrirArchivo(ruta)
+	defer archivoDePartidos.Close()
+
+	var partidos []votos.Partido
+	partidoEnBlanco := votos.CrearVotosEnBlanco()
+	partidos = append(partidos, partidoEnBlanco)
+
+	scanner := bufio.NewScanner(archivoDePartidos)
+	for scanner.Scan() {
+		lineaDePartido := scanner.Text()
+		partidoEnFormaDeLista := strings.Split(lineaDePartido, ",")
+		nombre := partidoEnFormaDeLista[0]
+		candidatos := [votos.CANT_VOTACION]string{partidoEnFormaDeLista[1], partidoEnFormaDeLista[2], partidoEnFormaDeLista[3]}
+		partidoNuevo := votos.CrearPartido(nombre, candidatos)
+		partidos = append(partidos, partidoNuevo)
 	}
-
-	sort.Slice(votantes, func(i, j int) bool {
-		return votantes[i].LeerDNI() < votantes[j].LeerDNI()
-	})
-
-	return votantes
+	return partidos
 }
 
-func ObtenerPartidos(archivo *os.File) []votos.Partido {
-	var listaPartidos []votos.Partido
-	s := bufio.NewScanner(archivo)
-	for s.Scan() {
-		lineaPartido := s.Text()
-		listaPartido := strings.Split(lineaPartido, ",")
-		nombre, candidatos := listaPartido[0], [votos.CANT_VOTACION]string(listaPartido[1:])
-		partido := votos.CrearPartido(nombre, candidatos)
-		listaPartidos = append(listaPartidos, partido)
-	}
+func ObtenerVotantes(rutaPadrones string) []votos.Votante {
+	padrones := obtenerPadrones(rutaPadrones)
+	listaDeVotantes := make([]votos.Votante, len(padrones))
 
-	return listaPartidos
+	for i, dni := range padrones {
+		listaDeVotantes[i] = votos.CrearVotante(dni)
+	}
+	return listaDeVotantes
 }
 
-func DniValido(dni int) bool {
-	if dni != 0 {
-		return true
-	} else {
-		MostrarSalida(new(e.DNIError).Error())
+func obtenerPadrones(ruta string) []int {
+	archivoDePadrones := abrirArchivo(ruta)
+	defer archivoDePadrones.Close()
+
+	var padrones []int
+
+	scanner := bufio.NewScanner(archivoDePadrones)
+	for scanner.Scan() {
+		dni := scanner.Text()
+		numeroDNI, _ := strconv.Atoi(dni)
+		padrones = append(padrones, numeroDNI)
+	}
+
+	padrones = ordenarPadronesMergeSort(padrones)
+	return padrones
+}
+
+func merge(izquierda, derecha []int) []int {
+	i, j := 0, 0
+	resultante := make([]int, 0)
+	for i < len(izquierda) && j < len(derecha) {
+		if izquierda[i] < derecha[j] {
+			resultante = append(resultante, izquierda[i])
+			i++
+		} else {
+			resultante = append(resultante, derecha[j])
+			j++
+		}
+	}
+	resultante = append(resultante, izquierda[i:]...)
+	resultante = append(resultante, derecha[j:]...)
+	return resultante
+}
+
+func ordenarPadronesMergeSort(padrones []int) []int {
+	if len(padrones) < 2 {
+		return padrones
+	}
+	medio := len(padrones) / 2
+	izquierda := ordenarPadronesMergeSort(padrones[:medio])
+	derecha := ordenarPadronesMergeSort(padrones[medio:])
+	return merge(izquierda, derecha)
+}
+
+func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
+	if len(votantes) == 0 {
 		return false
 	}
-}
-
-func BuscarVotante(votantes []votos.Votante, dni int) votos.Votante {
-	if len(votantes) == 0 {
-		MostrarSalida(new(e.DNIFueraPadron).Error())
-		return nil
-	}
-
 	medio := len(votantes) / 2
+	if dni == votantes[medio].LeerDNI() {
+		return true
+	}
+	if dni < votantes[medio].LeerDNI() {
+		return documentoEnVotantes(dni, votantes[:medio])
+	}
+	return documentoEnVotantes(dni, votantes[medio+1:])
+}
 
-	if votantes[medio].LeerDNI() == dni {
-		return votantes[medio]
-	} else if votantes[medio].LeerDNI() < dni {
-		return BuscarVotante(votantes[medio+1:], dni)
-	} else {
-		return BuscarVotante(votantes[:medio], dni)
+func VerificarDNI(dni string, votantes []votos.Votante) (bool, string) {
+	numeroDNI, err := strconv.Atoi(dni)
+	if err != nil || numeroDNI <= 0 {
+		err := new(errores.DNIError)
+		return false, err.Error()
+	} else if !documentoEnVotantes(numeroDNI, votantes) {
+		err := new(errores.DNIFueraPadron)
+		return false, err.Error()
+	}
+	return true, SALIDA_EXITOSA
+}
+
+func tipoValido(tipoIngresado string) bool {
+	if tipoIngresado == "Presidente" || tipoIngresado == "Gobernador" || tipoIngresado == "Intendente" {
+		return true
+	}
+	return false
+}
+
+func numeroDeListaValido(numeroDeLista string, cantidadDePartidos int) bool {
+	listaNumero, err := strconv.Atoi(numeroDeLista)
+	if err != nil || listaNumero > cantidadDePartidos {
+		return false
+	}
+	return true
+}
+
+func verificarVotante(votante votos.Votante, votantesQueVotaron []int) bool {
+	documentoDelVotante := votante.LeerDNI()
+	for _, documento := range votantesQueVotaron {
+		if documentoDelVotante == documento {
+			return true
+		}
+	}
+	return false
+}
+
+func VerificarColaYVotante(filaDeVotantes TDACola.Cola[votos.Votante], votantesQueVotaron []int) (bool, string) {
+	if filaDeVotantes.EstaVacia() {
+		err := new(errores.FilaVacia)
+		return false, err.Error()
+	}
+	votante := filaDeVotantes.VerPrimero()
+	if verificarVotante(votante, votantesQueVotaron) {
+		err := new(errores.ErrorVotanteFraudulento)
+		err.Dni = votante.LeerDNI()
+		filaDeVotantes.Desencolar()
+		return false, err.Error()
+	}
+	return true, SALIDA_EXITOSA
+}
+
+func VerificarVoto(tipoDeVoto string, numeroDeLista string, filaDeVotantes TDACola.Cola[votos.Votante], votantesQueVotaron []int, listaDePartidos []votos.Partido) (bool, string) {
+	validez, salida := VerificarColaYVotante(filaDeVotantes, votantesQueVotaron)
+	if !validez {
+		return validez, salida
+	}
+	if !tipoValido(tipoDeVoto) {
+		err := new(errores.ErrorTipoVoto)
+		return false, err.Error()
+	}
+	if !numeroDeListaValido(numeroDeLista, len(listaDePartidos)-1) {
+		err := new(errores.ErrorAlternativaInvalida)
+		return false, err.Error()
+	}
+	return true, SALIDA_EXITOSA
+}
+
+func ConvertirEntradaATipoVoto(tipoVotoIngresado string) votos.TipoVoto {
+	if tipoVotoIngresado == "Presidente" {
+		return votos.PRESIDENTE
+	}
+	if tipoVotoIngresado == "Gobernador" {
+		return votos.GOBERNADOR
+	}
+	return votos.INTENDENTE
+}
+
+func ImprimirTipoCompleto(tipo votos.TipoVoto, partido []votos.Partido) {
+	switch tipo {
+	case 0:
+		fmt.Println("Presidente:")
+		for i := 0; i < len(partido); i++ {
+			fmt.Println(partido[i].ObtenerResultado(tipo))
+		}
+		fmt.Println()
+	case 1:
+		fmt.Println("Gobernador:")
+		for i := 0; i < len(partido); i++ {
+			fmt.Println(partido[i].ObtenerResultado(tipo))
+		}
+		fmt.Println()
+	case 2:
+		fmt.Println("Intendente:")
+		for i := 0; i < len(partido); i++ {
+			fmt.Println(partido[i].ObtenerResultado(tipo))
+		}
+		fmt.Println()
 	}
 }
 
-func ObtenerDniEntero(dni string) int {
-	var dniEntero int
-	dniEntero, err := strconv.Atoi(dni)
-	if err != nil || dniEntero <= 0 {
-		dniEntero = 0
+func ImprimirImpugnados(cantidad int) {
+	if cantidad == 1 {
+		fmt.Printf("Votos Impugnados: %d voto\n", cantidad)
+	} else {
+		fmt.Printf("Votos Impugnados: %d votos\n", cantidad)
 	}
-	return dniEntero
 }
