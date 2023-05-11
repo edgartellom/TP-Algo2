@@ -2,6 +2,7 @@ package diccionario
 
 import (
 	"fmt"
+	"math"
 )
 
 const (
@@ -39,10 +40,18 @@ type iterHash[K comparable, V any] struct {
 	posicion int
 }
 
+// func crearCelda[K comparable, V any]() celdaHash[K, V] {
+// 	return *new(celdaHash[K, V])
+// }
+
 func CrearHash[K comparable, V any]() Diccionario[K, V] {
 	hash := new(hashCerrado[K, V])
 	hash.tam = LONGITUD_INICIAL
-	hash.tabla = make([]celdaHash[K, V], hash.tam)
+	tabla := make([]celdaHash[K, V], hash.tam)
+	// for i := range tabla {
+	// 	tabla[i] = crearCelda[K, V]()
+	// }
+	hash.tabla = tabla
 	return hash
 }
 
@@ -63,21 +72,32 @@ func (hashC hashCerrado[K, V]) hash(clave K) int { // hash fnv-1a
 		hash ^= uint64(b)
 		hash *= prime
 	}
-
-	return int(hash) % hashC.tam
+	resultado := int(hash) % hashC.tam
+	resultado = int(math.Abs(float64(resultado)))
+	return resultado
 }
 
-func (hash *hashCerrado[K, V]) avanzar(pos int) int {
-	if pos > len(hash.tabla) {
+func (hashC *hashCerrado[K, V]) avanzar(pos int) int {
+	if pos >= hashC.tam {
 		return 0
 	}
 	return pos + 1
 }
 
-func (hash *hashCerrado[K, V]) redimensionarTabla(nuevaCap int) {
-	s := make([]celdaHash[K, V], nuevaCap)
-	copy(s, hash.tabla)
-	(*hash).tabla = s
+func (hashC *hashCerrado[K, V]) redimensionarTabla(nuevoTam int) {
+	nuevaTabla := make([]celdaHash[K, V], nuevoTam)
+
+	for i := 0; i < hashC.tam; i++ {
+		if hashC.tabla[i].estado == OCUPADO {
+			pos := hashC.obtenerPosicionPorColision(hashC.tabla[i].clave)
+			nuevaTabla[pos].clave = hashC.tabla[i].clave
+			nuevaTabla[pos].dato = hashC.tabla[i].dato
+			nuevaTabla[pos].estado = OCUPADO
+		}
+	}
+
+	hashC.tabla = nuevaTabla
+	hashC.tam = nuevoTam
 }
 
 func (hashC hashCerrado[K, V]) comprobarSiPertenece(clave K) {
@@ -89,6 +109,14 @@ func (hashC hashCerrado[K, V]) comprobarSiPertenece(clave K) {
 func (hashC hashCerrado[K, V]) obtenerPosicion(clave K) int {
 	pos := hashC.hash(clave)
 	for hashC.tabla[pos].clave != clave {
+		pos = hashC.avanzar(pos)
+	}
+	return pos
+}
+
+func (hashC hashCerrado[K, V]) obtenerPosicionPorColision(clave K) int {
+	pos := hashC.hash(clave)
+	for hashC.tabla[pos].estado != VACIO {
 		pos = hashC.avanzar(pos)
 	}
 	return pos
@@ -113,24 +141,22 @@ func (hashC hashCerrado[K, V]) Pertenece(clave K) bool {
 
 // Guardar guarda el par clave-dato en el Diccionario. Si la clave ya se encontraba, se actualiza el dato asociado
 func (hashC *hashCerrado[K, V]) Guardar(clave K, dato V) {
-	pos := hashC.hash(clave)
 
 	if hashC.factorDeCarga() == 1 {
 		hashC.redimensionarTabla(hashC.tam * FACTOR_REDIMENSION)
 	}
 
 	if !hashC.Pertenece(clave) {
-		(*hashC).tabla[pos].dato = dato
+		pos := hashC.obtenerPosicionPorColision(clave)
 		(*hashC).tabla[pos].clave = clave
+		(*hashC).tabla[pos].dato = dato
+		(*hashC).tabla[pos].estado = OCUPADO
 		(*hashC).cantidad++
 	} else {
-		for hashC.tabla[pos].estado != VACIO {
-			if hashC.tabla[pos].clave == clave {
-				(*hashC).tabla[pos].dato = dato
-			}
-			pos = hashC.avanzar(pos)
-		}
+		pos := hashC.obtenerPosicion(clave)
+		(*hashC).tabla[pos].dato = dato
 	}
+
 }
 
 // Obtener devuelve el dato asociado a una clave. Si la clave no pertenece, debe entrar en pánico con mensaje
@@ -150,12 +176,12 @@ func (hashC *hashCerrado[K, V]) Borrar(clave K) V {
 	hashC.tabla[pos].estado = BORRADO
 	hashC.borrados++
 	hashC.cantidad--
-	if hashC.factorDeCarga()*FACTOR_ACHICAR <= hashC.tam {
-		nuevaCap := hashC.tam / FACTOR_REDIMENSION
-		if nuevaCap < LONGITUD_INICIAL {
-			nuevaCap = LONGITUD_INICIAL
+	if hashC.factorDeCarga()*FACTOR_ACHICAR <= 1 {
+		nuevoTam := hashC.tam / FACTOR_REDIMENSION
+		if nuevoTam < LONGITUD_INICIAL {
+			nuevoTam = LONGITUD_INICIAL
 		}
-		hashC.redimensionarTabla(nuevaCap)
+		hashC.redimensionarTabla(nuevoTam)
 	}
 	return dato
 
