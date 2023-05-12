@@ -2,7 +2,7 @@ package diccionario_test
 
 import (
 	"fmt"
-	TDADiccionario "tdas/diccionario"
+	TDADiccionario "tdas/hash"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -68,19 +68,19 @@ func TestDiccionarioGuardar(t *testing.T) {
 	require.False(t, dic.Pertenece(claves[1]))
 	require.False(t, dic.Pertenece(claves[2]))
 	dic.Guardar(claves[1], valores[1])
-	// require.True(t, dic.Pertenece(claves[0]))
+	require.True(t, dic.Pertenece(claves[0]))
 	require.True(t, dic.Pertenece(claves[1]))
 	require.EqualValues(t, 2, dic.Cantidad())
-	// require.EqualValues(t, valores[0], dic.Obtener(claves[0]))
+	require.EqualValues(t, valores[0], dic.Obtener(claves[0]))
 	require.EqualValues(t, valores[1], dic.Obtener(claves[1]))
 
 	require.False(t, dic.Pertenece(claves[2]))
 	dic.Guardar(claves[2], valores[2])
-	// require.True(t, dic.Pertenece(claves[0]))
+	require.True(t, dic.Pertenece(claves[0]))
 	require.True(t, dic.Pertenece(claves[1]))
 	require.True(t, dic.Pertenece(claves[2]))
 	require.EqualValues(t, 3, dic.Cantidad())
-	// require.EqualValues(t, valores[0], dic.Obtener(claves[0]))
+	require.EqualValues(t, valores[0], dic.Obtener(claves[0]))
 	require.EqualValues(t, valores[1], dic.Obtener(claves[1]))
 	require.EqualValues(t, valores[2], dic.Obtener(claves[2]))
 }
