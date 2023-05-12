@@ -3,16 +3,15 @@ package diccionario
 import (
 	"encoding/binary"
 	"fmt"
-	"math"
 )
 
 type Estado int
 
 const (
 	LONGITUD_INICIAL   = 13
-	METRICA            = 0.7
-	FACTOR_AGRANDAR    = 2
-	FACTOR_ACHICAR     = 4
+	FACTOR_REDIMENSION = 2
+	FACTOR_AGRANDAR    = 0.7
+	FACTOR_ACHICAR     = 0.2
 	PANIC_NO_PERTENECE = "La clave no pertenece al diccionario"
 	PANIC_ITERADOR     = "El iterador termino de iterar"
 )
@@ -23,14 +22,14 @@ const (
 	BORRADO
 )
 
-type celdasHash[K comparable, V any] struct {
+type celdaHash[K comparable, V any] struct {
 	estado Estado
 	clave  K
 	dato   V
 }
 
 type hashCerrado[K comparable, V any] struct {
-	tabla    []celdasHash[K, V]
+	tabla    []celdaHash[K, V]
 	cantidad int
 	borrados int
 	tam      int
@@ -38,85 +37,81 @@ type hashCerrado[K comparable, V any] struct {
 
 type iterHash[K comparable, V any] struct {
 	hash     *hashCerrado[K, V]
-	actual   *celdasHash[K, V]
+	actual   *celdaHash[K, V]
 	posicion int
 }
 
-/* ----------------- PARA FUNCION DE HASHING -------------------- */
+/* ---------------------------------- FUNCIONES AUXILIARES DE HASHING ---------------------------------- */
 
 func convertirABytes[K comparable](clave K) []byte {
 	return []byte(fmt.Sprintf("%v", clave))
 }
 
-func f_hashing[K comparable](clave K, longitud int) int {
-	bytes := convertirABytes(clave)
+func funcionDeHashing[K comparable](clave K) int { // <--- MUMUR HASH
+	entrada := convertirABytes(clave)
 
 	const (
-		offset = 14695981039346656037
-		prime  = 1099511628211
-	)
-
-	hash := uint64(offset)
-	for _, b := range bytes {
-		hash ^= uint64(b)
-		hash *= prime
-	}
-	resultado := int(hash) % longitud
-	resultado = int(math.Abs(float64(resultado)))
-	return resultado
-}
-
-func mumurHash123(clave string, longitud int) int {
-	key := convertirABytes(clave)
-
-	const (
-		m = 0x5bd1e995
-		r = 24
+		c1 = 0xcc9e2d51
+		c2 = 0x1b873593
+		r1 = 15
+		r2 = 13
+		m  = 5
+		n  = 0xe6546b64
 	)
 
 	var (
-		h    = uint32(len(key))
-		data = key
+		h1    = uint32(len(entrada))
+		k1    uint32
+		chunk uint32
 	)
 
-	for len(data) >= 4 {
-		k := binary.LittleEndian.Uint32(data)
-		k *= m
-		k ^= k >> r
-		k *= m
+	for len(entrada) >= 4 {
+		chunk = binary.LittleEndian.Uint32(entrada)
+		k1 = chunk
 
-		h *= m
-		h ^= k
+		k1 *= c1
+		k1 = (k1 << r1) | (k1 >> (32 - r1))
+		k1 *= c2
 
-		data = data[4:]
+		h1 ^= k1
+		h1 = (h1 << r2) | (h1 >> (32 - r2))
+		h1 = h1*m + n
+
+		entrada = entrada[4:]
 	}
 
-	switch len(data) {
+	k1 = 0
+	switch len(entrada) {
 	case 3:
-		h ^= uint32(data[2]) << 16
+		k1 ^= uint32(entrada[2]) << 16
 		fallthrough
 	case 2:
-		h ^= uint32(data[1]) << 8
+		k1 ^= uint32(entrada[1]) << 8
 		fallthrough
 	case 1:
-		h ^= uint32(data[0])
-		h *= m
+		k1 ^= uint32(entrada[0])
+		k1 *= c1
+		k1 = (k1 << r1) | (k1 >> (32 - r1))
+		k1 *= c2
+		h1 ^= k1
 	}
 
-	h ^= h >> 13
-	h *= m
-	h ^= h >> 15
+	h1 ^= uint32(len(entrada))
+	h1 ^= h1 >> 16
+	h1 *= 0x85ebca6b
+	h1 ^= h1 >> 13
+	h1 *= 0xc2b2ae35
+	h1 ^= h1 >> 16
 
-	posicion := int(h) % longitud
-	return posicion
+	return int(h1)
 }
 
-/* -------------------------------- FUNCIONES CREAR ---------------------------------- */
+/* --------------------------------------- FUNCIONES DE CREACION --------------------------------------- */
 
-func crearCelda[K comparable, V any](clave K, valor V) celdasHash[K, V] {
-	celda := new(celdasHash[K, V])
+func crearCelda[K comparable, V any](clave K, dato V) celdaHash[K, V] {
+	celda := new(celdaHash[K, V])
 	celda.clave = clave
-	celda.dato = valor
+	celda.dato = dato
 	celda.estado = OCUPADO
 	return *celda
 }
@@ -124,24 +119,15 @@ func crearCelda[K comparable, V any](clave K, valor V) celdasHash[K, V] {
 func CrearHash[K comparable, V any]() Diccionario[K, V] {
 	hash := new(hashCerrado[K, V])
 	hash.tam = LONGITUD_INICIAL
-	tabla := make([]celdasHash[K, V], hash.tam)
-	// for i := range tabla {
-	// 	tabla[i] = crearCelda[K, V]()
-	// }
+	tabla := make([]celdaHash[K, V], hash.tam)
 	hash.tabla = tabla
 	return hash
 }
 
-/* --------------------------- PRIMITIVAS AUXILIARES ---------------------------- */
+/* --------------------------------- FUNCIONES AUXILIARES HASH CERRADO --------------------------------- */
 
 func (hash *hashCerrado[K, V]) factorDeCarga() float64 {
 	return float64(hash.cantidad+hash.borrados) / float64(hash.tam)
-}
-
-func (hash *hashCerrado[K, V]) comprobarSiPertenece(clave K) {
-	if !hash.Pertenece(clave) {
-		panic(PANIC_NO_PERTENECE)
-	}
 }
 
 func (hash *hashCerrado[K, V]) avanzarPosicion(posicion int) int {
@@ -151,63 +137,70 @@ func (hash *hashCerrado[K, V]) avanzarPosicion(posicion int) int {
 	return posicion + 1
 }
 
-func (hash *hashCerrado[K, V]) redimensionarTabla(nuevoTam int) {
-	tablaActual := copiarTabla(hash.tabla)
-
-	hash.tam = nuevoTam
-	hash.tabla = make([]celdasHash[K, V], nuevoTam)
-
-	for actual, pos := obtenerCeldaOcupada(tablaActual, 0); actual != nil; {
-		clave, valor := actual.clave, actual.dato
-		hash.Guardar(clave, valor)
-		actual, pos = obtenerCeldaOcupada(tablaActual, pos+1)
-	}
-
+func (hash hashCerrado[K, V]) obtenerPosicionHashing(clave K) int {
+	numeroDeHash := funcionDeHashing(clave)
+	return numeroDeHash % hash.tam
 }
 
-func (hash *hashCerrado[K, V]) obtenerPosicionValida(clave K) int {
-	posicion := f_hashing(clave, hash.tam)
+func (hash *hashCerrado[K, V]) obtenerPosicionVacia(clave K) int {
+	posicion := hash.obtenerPosicionHashing(clave)
 	for ; hash.tabla[posicion].estado != VACIO; posicion = hash.avanzarPosicion(posicion) {
 	}
 	return posicion
 }
 
-// PENSAR EN LAS CELDAS BORRADAS; REVISARIAS LA CLAVE DE UNA CELDA BORRADA
 func (hash *hashCerrado[K, V]) obtenerPosicionDeClave(clave K) int {
-	posicion := f_hashing(clave, hash.tam)
-	for hash.tabla[posicion].clave != clave {
-		posicion = hash.avanzarPosicion(posicion)
+	posicion := hash.obtenerPosicionHashing(clave)
+	for ; hash.tabla[posicion].estado != VACIO; posicion = hash.avanzarPosicion(posicion) {
+		if hash.tabla[posicion].estado == OCUPADO && hash.tabla[posicion].clave == clave {
+			break
+		}
 	}
 	return posicion
 }
 
-/* ---------------------------------- FUNCIONES AUXILIARES ------------------------------ */
+/* ------------------------------------- FUNCION AUXILIAR ITERADORA ------------------------------------ */
 
-func copiarTabla[K comparable, V any](tabla []celdasHash[K, V]) []celdasHash[K, V] {
-	copia := make([]celdasHash[K, V], len(tabla))
-	indice := 0
-	for actual, pos := obtenerCeldaOcupada(tabla, 0); actual != nil; indice++ {
-		clave, valor := actual.clave, actual.dato
-		celda := crearCelda(clave, valor)
-		copia[indice] = celda
-		actual, pos = obtenerCeldaOcupada(tabla, pos+1)
-	}
-	return copia
-}
-
-func obtenerCeldaOcupada[K comparable, V any](tabla []celdasHash[K, V], posicion int) (*celdasHash[K, V], int) {
-	for i := posicion; i < len(tabla); i++ {
-		if tabla[i].estado == OCUPADO {
-			return &tabla[i], i
+func obtenerCeldaOcupada[K comparable, V any](tabla []celdaHash[K, V], posicion int) (*celdaHash[K, V], int) {
+	for indice := posicion; indice < len(tabla); indice++ {
+		if tabla[indice].estado == OCUPADO {
+			return &tabla[indice], indice
 		}
 	}
 	return nil, len(tabla)
 }
 
-/* ----------------------------------- PRIMITIVAS PRINCIPALES ------------------------------------- */
+/* -------------------------------- FUNCIONES AUXILIARES DE REDIMENSION -------------------------------- */
+
+func (hash *hashCerrado[K, V]) redimensionarTabla(nuevoTam int) {
+	tablaActual := copiarTabla(hash.tabla)
+
+	hash.tam = nuevoTam
+	hash.tabla = make([]celdaHash[K, V], nuevoTam)
+	hash.cantidad = 0
+
+	for actual, pos := obtenerCeldaOcupada(tablaActual, 0); actual != nil; actual, pos = obtenerCeldaOcupada(tablaActual, pos+1) {
+		clave, valor := actual.clave, actual.dato
+		hash.Guardar(clave, valor)
+	}
+}
+
+func copiarTabla[K comparable, V any](tabla []celdaHash[K, V]) []celdaHash[K, V] {
+	copia := make([]celdaHash[K, V], len(tabla))
+	var indice int
+	for actual, pos := obtenerCeldaOcupada(tabla, 0); actual != nil; actual, pos = obtenerCeldaOcupada(tabla, pos+1) {
+		clave, valor := actual.clave, actual.dato
+		celda := crearCelda(clave, valor)
+		copia[indice] = celda
+		indice++
+	}
+	return copia
+}
+
+/* -------------------------------------- PRIMITIVAS HASH CERRADO -------------------------------------- */
 
 func (hash *hashCerrado[K, V]) Pertenece(clave K) bool {
-	for pos := f_hashing(clave, hash.tam); hash.tabla[pos].estado != VACIO; pos = hash.avanzarPosicion(pos) {
+	for pos := hash.obtenerPosicionHashing(clave); hash.tabla[pos].estado != VACIO; pos = hash.avanzarPosicion(pos) {
 		if hash.tabla[pos].estado == OCUPADO && hash.tabla[pos].clave == clave {
 			return true
 		}
@@ -215,49 +208,41 @@ func (hash *hashCerrado[K, V]) Pertenece(clave K) bool {
 	return false
 }
 
-func (hash *hashCerrado[K, V]) Guardar(clave K, valor V) {
-	if hash.factorDeCarga() > METRICA {
-		hash.redimensionarTabla(hash.tam * FACTOR_AGRANDAR)
+func (hash *hashCerrado[K, V]) Guardar(clave K, dato V) {
+	if hash.factorDeCarga() >= FACTOR_AGRANDAR {
+		hash.redimensionarTabla(hash.tam * FACTOR_REDIMENSION)
 	}
 
 	if !hash.Pertenece(clave) {
-		posicion := hash.obtenerPosicionValida(clave)
-		celda := crearCelda(clave, valor)
+		posicion := hash.obtenerPosicionVacia(clave)
+		celda := crearCelda(clave, dato)
 		(*hash).tabla[posicion] = celda
 		hash.cantidad++
 	} else {
 		posicion := hash.obtenerPosicionDeClave(clave)
-		(*hash).tabla[posicion].dato = valor
+		(*hash).tabla[posicion].dato = dato
 	}
 }
 
 func (hash *hashCerrado[K, V]) Obtener(clave K) V {
 	hash.comprobarSiPertenece(clave)
 
-	posicion := f_hashing(clave, hash.tam)
-	for ; hash.tabla[posicion].clave != clave; posicion = hash.avanzarPosicion(posicion) {
-	}
+	posicion := hash.obtenerPosicionDeClave(clave)
 	return hash.tabla[posicion].dato
 }
 
 func (hash *hashCerrado[K, V]) Borrar(clave K) V {
 	hash.comprobarSiPertenece(clave)
 
-	// SE PODRIA REDUCIR UNA LINEA???
-	posicion := f_hashing(clave, hash.tam)
-	for hash.tabla[posicion].clave != clave {
-		posicion = hash.avanzarPosicion(posicion)
-	}
+	posicion := hash.obtenerPosicionDeClave(clave)
+
 	dato := hash.tabla[posicion].dato
 	hash.tabla[posicion].estado = BORRADO
 	hash.borrados++
 	hash.cantidad--
 
-	if hash.factorDeCarga()*FACTOR_ACHICAR < METRICA {
-		nuevoTam := hash.tam / FACTOR_AGRANDAR
-		if nuevoTam < LONGITUD_INICIAL {
-			nuevoTam = LONGITUD_INICIAL
-		}
+	nuevoTam := hash.tam / FACTOR_REDIMENSION
+	if hash.factorDeCarga()*FACTOR_ACHICAR <= FACTOR_ACHICAR && nuevoTam < LONGITUD_INICIAL {
 		hash.redimensionarTabla(nuevoTam)
 	}
 
@@ -268,45 +253,47 @@ func (hash *hashCerrado[K, V]) Cantidad() int {
 	return hash.cantidad
 }
 
-/* ------------------------------------ ITERADOR INTERNO ----------------------------------------- */
 func (hash *hashCerrado[K, V]) Iterar(visitar func(clave K, dato V) bool) {
 	for actual, pos := obtenerCeldaOcupada(hash.tabla, 0); actual != nil && visitar(actual.clave, actual.dato); {
 		actual, pos = obtenerCeldaOcupada(hash.tabla, pos+1)
 	}
 }
 
-/* ------------------------------------ ITERADOR EXTERNO ----------------------------------------- */
 func (hash *hashCerrado[K, V]) Iterador() IterDiccionario[K, V] {
 	iter := new(iterHash[K, V])
 	iter.hash = hash
-	iter.actual, iter.posicion = obtenerCeldaOcupada(hash.tabla, iter.posicion)
+	iter.actual, iter.posicion = obtenerCeldaOcupada(hash.tabla, 0)
 	return iter
 }
+
+/* ---------------------------------------- PRIMITIVAS ITERADOR ---------------------------------------- */
 
 func (iter *iterHash[K, V]) HaySiguiente() bool {
 	return iter.actual != nil
 }
 
 func (iter *iterHash[K, V]) VerActual() (K, V) {
-	iter.iteradorFueraDeRango()
+	iter.comprobarIteradorFinalizo()
+
 	return iter.actual.clave, iter.actual.dato
 }
 
 func (iter *iterHash[K, V]) Siguiente() {
-	iter.iteradorFueraDeRango()
-	for iter.hash.tabla[iter.posicion].estado != OCUPADO {
-		iter.posicion++
-	}
-	if iter.posicion < len(iter.hash.tabla) {
-		iter.actual = &iter.hash.tabla[iter.posicion]
-		iter.posicion++
-	} else {
-		iter.actual = nil
+	iter.comprobarIteradorFinalizo()
+
+	(*iter).actual, (*iter).posicion = obtenerCeldaOcupada(iter.hash.tabla, iter.posicion+1)
+}
+
+/* -------------------------------------- COMPROBADORES DE PANICS -------------------------------------- */
+
+func (iter *iterHash[K, V]) comprobarIteradorFinalizo() {
+	if !iter.HaySiguiente() {
+		panic(PANIC_ITERADOR)
 	}
 }
 
-func (iter *iterHash[K, V]) iteradorFueraDeRango() {
-	if !iter.HaySiguiente() {
-		panic(PANIC_ITERADOR)
+func (hash *hashCerrado[K, V]) comprobarSiPertenece(clave K) {
+	if !hash.Pertenece(clave) {
+		panic(PANIC_NO_PERTENECE)
 	}
 }
