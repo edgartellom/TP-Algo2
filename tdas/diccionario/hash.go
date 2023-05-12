@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type Estado int
+type estado int
 
 const (
 	LONGITUD_INICIAL   = 13
@@ -17,13 +17,21 @@ const (
 )
 
 const (
-	VACIO Estado = iota
+	VACIO estado = iota
 	OCUPADO
 	BORRADO
 )
 
+type funcion int
+
+const (
+	GUARDAR funcion = iota
+	OBTENER
+	BORRAR
+)
+
 type celdaHash[K comparable, V any] struct {
-	estado Estado
+	estado estado
 	clave  K
 	dato   V
 }
@@ -142,21 +150,14 @@ func (hash hashCerrado[K, V]) obtenerPosicionHashing(clave K) int {
 	return numeroDeHash % hash.tam
 }
 
-func (hash *hashCerrado[K, V]) obtenerPosicionVacia(clave K) int {
-	posicion := hash.obtenerPosicionHashing(clave)
-	for ; hash.tabla[posicion].estado != VACIO; posicion = hash.avanzarPosicion(posicion) {
-	}
-	return posicion
-}
-
-func (hash *hashCerrado[K, V]) obtenerPosicionDeClave(clave K) int {
-	posicion := hash.obtenerPosicionHashing(clave)
-	for ; hash.tabla[posicion].estado != VACIO; posicion = hash.avanzarPosicion(posicion) {
-		if hash.tabla[posicion].estado == OCUPADO && hash.tabla[posicion].clave == clave {
-			break
+func (hash *hashCerrado[K, V]) buscar(clave K) int {
+	pos := hash.obtenerPosicionHashing(clave)
+	for ; hash.tabla[pos].estado != VACIO; pos = hash.avanzarPosicion(pos) {
+		if hash.tabla[pos].estado == OCUPADO && hash.tabla[pos].clave == clave {
+			return pos
 		}
 	}
-	return posicion
+	return pos
 }
 
 /* ------------------------------------- FUNCION AUXILIAR ITERADORA ------------------------------------ */
@@ -200,10 +201,9 @@ func copiarTabla[K comparable, V any](tabla []celdaHash[K, V]) []celdaHash[K, V]
 /* -------------------------------------- PRIMITIVAS HASH CERRADO -------------------------------------- */
 
 func (hash *hashCerrado[K, V]) Pertenece(clave K) bool {
-	for pos := hash.obtenerPosicionHashing(clave); hash.tabla[pos].estado != VACIO; pos = hash.avanzarPosicion(pos) {
-		if hash.tabla[pos].estado == OCUPADO && hash.tabla[pos].clave == clave {
-			return true
-		}
+	posicion := hash.buscar(clave)
+	if hash.tabla[posicion].estado == OCUPADO && hash.tabla[posicion].clave == clave {
+		return true
 	}
 	return false
 }
@@ -213,33 +213,34 @@ func (hash *hashCerrado[K, V]) Guardar(clave K, dato V) {
 		hash.redimensionarTabla(hash.tam * FACTOR_REDIMENSION)
 	}
 
-	if !hash.Pertenece(clave) {
-		posicion := hash.obtenerPosicionVacia(clave)
+	posicion := hash.buscar(clave)
+
+	if hash.tabla[posicion].estado == VACIO {
 		celda := crearCelda(clave, dato)
 		(*hash).tabla[posicion] = celda
 		hash.cantidad++
 	} else {
-		posicion := hash.obtenerPosicionDeClave(clave)
 		(*hash).tabla[posicion].dato = dato
 	}
 }
 
 func (hash *hashCerrado[K, V]) Obtener(clave K) V {
-	hash.comprobarSiPertenece(clave)
+	posicion := hash.buscar(clave)
 
-	posicion := hash.obtenerPosicionDeClave(clave)
+	hash.comprobarEstado(posicion)
+
 	return hash.tabla[posicion].dato
 }
 
 func (hash *hashCerrado[K, V]) Borrar(clave K) V {
-	hash.comprobarSiPertenece(clave)
+	posicion := hash.buscar(clave)
 
-	posicion := hash.obtenerPosicionDeClave(clave)
+	hash.comprobarEstado(posicion)
 
 	dato := hash.tabla[posicion].dato
 	hash.tabla[posicion].estado = BORRADO
-	hash.borrados++
 	hash.cantidad--
+	hash.borrados++
 
 	nuevoTam := hash.tam / FACTOR_REDIMENSION
 	if hash.factorDeCarga()*FACTOR_ACHICAR <= FACTOR_ACHICAR && nuevoTam < LONGITUD_INICIAL {
@@ -292,8 +293,8 @@ func (iter *iterHash[K, V]) comprobarIteradorFinalizo() {
 	}
 }
 
-func (hash *hashCerrado[K, V]) comprobarSiPertenece(clave K) {
-	if !hash.Pertenece(clave) {
+func (hash *hashCerrado[K, V]) comprobarEstado(posicion int) {
+	if hash.tabla[posicion].estado == VACIO {
 		panic(PANIC_NO_PERTENECE)
 	}
 }
