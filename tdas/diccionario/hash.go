@@ -22,14 +22,6 @@ const (
 	BORRADO
 )
 
-type funcion int
-
-const (
-	GUARDAR funcion = iota
-	OBTENER
-	BORRAR
-)
-
 type celdaHash[K comparable, V any] struct {
 	estado estado
 	clave  K
@@ -150,7 +142,7 @@ func (hash hashCerrado[K, V]) obtenerPosicionHashing(clave K) int {
 	return numeroDeHash % hash.tam
 }
 
-func (hash *hashCerrado[K, V]) buscar(clave K) int {
+func (hash *hashCerrado[K, V]) obtenerPosicion(clave K) int {
 	pos := hash.obtenerPosicionHashing(clave)
 	for ; hash.tabla[pos].estado != VACIO; pos = hash.avanzarPosicion(pos) {
 		if hash.tabla[pos].estado == OCUPADO && hash.tabla[pos].clave == clave {
@@ -201,7 +193,7 @@ func copiarTabla[K comparable, V any](tabla []celdaHash[K, V]) []celdaHash[K, V]
 /* -------------------------------------- PRIMITIVAS HASH CERRADO -------------------------------------- */
 
 func (hash *hashCerrado[K, V]) Pertenece(clave K) bool {
-	posicion := hash.buscar(clave)
+	posicion := hash.obtenerPosicion(clave)
 	if hash.tabla[posicion].estado == OCUPADO && hash.tabla[posicion].clave == clave {
 		return true
 	}
@@ -213,7 +205,7 @@ func (hash *hashCerrado[K, V]) Guardar(clave K, dato V) {
 		hash.redimensionarTabla(hash.tam * FACTOR_REDIMENSION)
 	}
 
-	posicion := hash.buscar(clave)
+	posicion := hash.obtenerPosicion(clave)
 
 	if hash.tabla[posicion].estado == VACIO {
 		celda := crearCelda(clave, dato)
@@ -225,7 +217,7 @@ func (hash *hashCerrado[K, V]) Guardar(clave K, dato V) {
 }
 
 func (hash *hashCerrado[K, V]) Obtener(clave K) V {
-	posicion := hash.buscar(clave)
+	posicion := hash.obtenerPosicion(clave)
 
 	hash.comprobarEstado(posicion)
 
@@ -233,7 +225,7 @@ func (hash *hashCerrado[K, V]) Obtener(clave K) V {
 }
 
 func (hash *hashCerrado[K, V]) Borrar(clave K) V {
-	posicion := hash.buscar(clave)
+	posicion := hash.obtenerPosicion(clave)
 
 	hash.comprobarEstado(posicion)
 
