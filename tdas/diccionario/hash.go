@@ -194,10 +194,7 @@ func copiarTabla[K comparable, V any](tabla []celdaHash[K, V]) []celdaHash[K, V]
 
 func (hash *hashCerrado[K, V]) Pertenece(clave K) bool {
 	posicion := hash.obtenerPosicion(clave)
-	if hash.tabla[posicion].estado == OCUPADO && hash.tabla[posicion].clave == clave {
-		return true
-	}
-	return false
+	return hash.tabla[posicion].estado == OCUPADO && hash.tabla[posicion].clave == clave
 }
 
 func (hash *hashCerrado[K, V]) Guardar(clave K, dato V) {
