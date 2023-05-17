@@ -21,11 +21,11 @@ const (
 	INDICE_TIPO_INGRESADO      = 1
 	INDICE_NUM_LISTA_INGRESADO = 2
 
-	SEPARADOR_ENTRADA     = " "
-	ACCION_INGRESAR       = "ingresar"
-	ACCION_VOTAR          = "votar"
-	ACCION_DESHACER       = "deshacer"
-	ACCION_FINALIZAR_VOTO = "fin-votar"
+	SEPARADOR_ENTRADA      = " "
+	COMANDO_INGRESAR       = "ingresar"
+	COMANDO_VOTAR          = "votar"
+	COMANDO_DESHACER       = "deshacer"
+	COMANDO_FINALIZAR_VOTO = "fin-votar"
 )
 
 func main() {
@@ -51,18 +51,18 @@ func main() {
 		comando := entradaSeparada[INDICE_COMANDO]
 
 		switch comando {
-		case ACCION_INGRESAR:
+		case COMANDO_INGRESAR:
 			acciones.AccionIngresar(entradaSeparada[INDICE_DNI_INGRESADO], &filaDeVotacion, listaDeVotantes)
 
-		case ACCION_VOTAR:
+		case COMANDO_VOTAR:
 			acciones.AccionVotar(entradaSeparada[INDICE_TIPO_INGRESADO], entradaSeparada[INDICE_NUM_LISTA_INGRESADO], &filaDeVotacion, documentosQueVotaron, listaDePartidos)
 
-		case ACCION_DESHACER:
+		case COMANDO_DESHACER:
 			acciones.AccionDeshacer(&filaDeVotacion, documentosQueVotaron)
 
-		case ACCION_FINALIZAR_VOTO:
+		case COMANDO_FINALIZAR_VOTO:
 			acciones.AccionFinVotar(&filaDeVotacion, &documentosQueVotaron, &listaDePartidos, &contadorDeVotosImpugnados)
 		}
 	}
-	acciones.FinalizarPeriodoDeVotacion(&filaDeVotacion, &listaDePartidos, &contadorDeVotosImpugnados)
+	acciones.MostrarResultadosVotaciones(&filaDeVotacion, &listaDePartidos, &contadorDeVotosImpugnados)
 }

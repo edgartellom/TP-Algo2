@@ -65,7 +65,7 @@ func AccionFinVotar(filaDeVotacion *TDACola.Cola[votos.Votante], DNIsQueVotaron 
 	funciones.MostrarSalida(salida)
 }
 
-func FinalizarPeriodoDeVotacion(filaDeVotacion *TDACola.Cola[votos.Votante], listaDePartidos *[]votos.Partido, votosImpugnados *int) {
+func MostrarResultadosVotaciones(filaDeVotacion *TDACola.Cola[votos.Votante], listaDePartidos *[]votos.Partido, votosImpugnados *int) {
 	if !(*filaDeVotacion).EstaVacia() {
 		for !(*filaDeVotacion).EstaVacia() {
 			(*filaDeVotacion).Desencolar()

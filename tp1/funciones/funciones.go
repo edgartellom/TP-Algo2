@@ -69,7 +69,7 @@ func ObtenerPartidos(ruta string) []votos.Partido {
 		partidoEnFormaDeLista := strings.Split(lineaDePartido, SEPARADOR_ARCHIVO)
 		nombre := partidoEnFormaDeLista[0]
 		candidatos := [votos.CANT_VOTACION]string{partidoEnFormaDeLista[1], partidoEnFormaDeLista[2], partidoEnFormaDeLista[3]}
-		partidoNuevo := votos.CrearPartido(nombre, candidatos)
+		partidoNuevo := votos.CrearPartidoPolitico(nombre, candidatos)
 		partidos = append(partidos, partidoNuevo)
 	}
 	return partidos
@@ -151,13 +151,14 @@ func countingSortSimplificado(padrones []int, divisor int) []int {
 func VerificarDNI(dni string, votantes []votos.Votante) (bool, string) {
 	numeroDNI, err := strconv.Atoi(dni)
 	if err != nil || numeroDNI <= 0 {
-		err := new(errores.DNIError)
-		return false, err.Error()
+		err = new(errores.DNIError)
 	} else if !documentoEnVotantes(numeroDNI, votantes) {
-		err := new(errores.DNIFueraPadron)
-		return false, err.Error()
+		err = new(errores.DNIFueraPadron)
 	}
-	return true, SALIDA_EXITOSA
+	if err == nil {
+		return true, SALIDA_EXITOSA
+	}
+	return false, err.Error()
 }
 
 func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
@@ -167,8 +168,7 @@ func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
 	medio := len(votantes) / 2
 	if dni == votantes[medio].LeerDNI() {
 		return true
-	}
-	if dni < votantes[medio].LeerDNI() {
+	} else if dni < votantes[medio].LeerDNI() {
 		return documentoEnVotantes(dni, votantes[:medio])
 	}
 	return documentoEnVotantes(dni, votantes[medio+1:])
@@ -180,10 +180,7 @@ func tipoValido(tipoIngresado string) bool {
 
 func numeroDeListaValido(numeroDeLista string, cantidadDePartidos int) bool {
 	listaNumero, err := strconv.Atoi(numeroDeLista)
-	if err != nil || listaNumero > cantidadDePartidos {
-		return false
-	}
-	return true
+	return err == nil && listaNumero <= cantidadDePartidos
 }
 
 func verificarVotante(votante votos.Votante, votantesQueVotaron []int) bool {
@@ -216,15 +213,16 @@ func VerificarVoto(tipoDeVoto string, numeroDeLista string, filaDeVotantes TDACo
 	if !validez {
 		return validez, salida
 	}
+	var err error
 	if !tipoValido(tipoDeVoto) {
-		err := new(errores.ErrorTipoVoto)
-		return false, err.Error()
+		err = new(errores.ErrorTipoVoto)
+	} else if !numeroDeListaValido(numeroDeLista, len(listaDePartidos)-1) {
+		err = new(errores.ErrorAlternativaInvalida)
 	}
-	if !numeroDeListaValido(numeroDeLista, len(listaDePartidos)-1) {
-		err := new(errores.ErrorAlternativaInvalida)
-		return false, err.Error()
+	if err == nil {
+		return true, SALIDA_EXITOSA
 	}
-	return true, SALIDA_EXITOSA
+	return false, err.Error()
 }
 
 /* ---------------------------- FUNCION PARA CONVERTIR ENTRADA ---------------------------- */
