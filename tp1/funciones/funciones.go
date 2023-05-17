@@ -7,12 +7,24 @@ import (
 	"strconv"
 	"strings"
 
-	errores "rerepolez/errores"
-	votos "rerepolez/votos"
+	"rerepolez/errores"
+	"rerepolez/votos"
 	TDACola "tdas/cola"
 )
 
-const SALIDA_EXITOSA = "OK"
+const (
+	SEPARADOR_ARCHIVO = ","
+	SINGULAR          = "voto"
+	PLURAL            = "votos"
+
+	SALIDA_EXITOSA = "OK"
+
+	PRESIDENTE = "Presidente"
+	GOBERNADOR = "Gobernador"
+	INTENDENTE = "Intendente"
+)
+
+/* ---------------------------- FUNCIONES DE GENERALES ---------------------------- */
 
 func MostrarError(err error) {
 	fmt.Fprintln(os.Stdout, err)
@@ -31,6 +43,16 @@ func abrirArchivo(ruta string) *os.File {
 	return archivo
 }
 
+func CrearFilaDeVotacion() TDACola.Cola[votos.Votante] {
+	return TDACola.CrearColaEnlazada[votos.Votante]()
+}
+
+func SepararEntrada(entrada string, separador string) []string {
+	return strings.Split(entrada, separador)
+}
+
+/* ---------------------------- FUNCIONES DE EXTRACCION DE INFORMACION ---------------------------- */
+
 func ObtenerPartidos(ruta string) []votos.Partido {
 	archivoDePartidos := abrirArchivo(ruta)
 	defer archivoDePartidos.Close()
@@ -42,8 +64,9 @@ func ObtenerPartidos(ruta string) []votos.Partido {
 	scanner := bufio.NewScanner(archivoDePartidos)
 	for scanner.Scan() {
 		lineaDePartido := scanner.Text()
-		partidoEnFormaDeLista := strings.Split(lineaDePartido, ",")
-		nombre, candidatos := partidoEnFormaDeLista[0], [3]string(partidoEnFormaDeLista[1:])
+		partidoEnFormaDeLista := strings.Split(lineaDePartido, SEPARADOR_ARCHIVO)
+		nombre := partidoEnFormaDeLista[0]
+		candidatos := [votos.CANT_VOTACION]string{partidoEnFormaDeLista[1], partidoEnFormaDeLista[2], partidoEnFormaDeLista[3]}
 		partidoNuevo := votos.CrearPartido(nombre, candidatos)
 		partidos = append(partidos, partidoNuevo)
 	}
@@ -118,6 +141,8 @@ func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
 	return documentoEnVotantes(dni, votantes[medio+1:])
 }
 
+/* ---------------------------- FUNCIONES DE VERIFICACION ---------------------------- */
+
 func VerificarDNI(dni string, votantes []votos.Votante) (bool, string) {
 	numeroDNI, err := strconv.Atoi(dni)
 	if err != nil || numeroDNI <= 0 {
@@ -131,10 +156,7 @@ func VerificarDNI(dni string, votantes []votos.Votante) (bool, string) {
 }
 
 func tipoValido(tipoIngresado string) bool {
-	if tipoIngresado == "Presidente" || tipoIngresado == "Gobernador" || tipoIngresado == "Intendente" {
-		return true
-	}
-	return false
+	return tipoIngresado == PRESIDENTE || tipoIngresado == GOBERNADOR || tipoIngresado == INTENDENTE
 }
 
 func numeroDeListaValido(numeroDeLista string, cantidadDePartidos int) bool {
@@ -186,43 +208,42 @@ func VerificarVoto(tipoDeVoto string, numeroDeLista string, filaDeVotantes TDACo
 	return true, SALIDA_EXITOSA
 }
 
+/* ---------------------------- FUNCION PARA CONVERTIR ENTRADA ---------------------------- */
+
 func ConvertirEntradaATipoVoto(tipoVotoIngresado string) votos.TipoVoto {
-	if tipoVotoIngresado == "Presidente" {
+	if tipoVotoIngresado == PRESIDENTE {
 		return votos.PRESIDENTE
 	}
-	if tipoVotoIngresado == "Gobernador" {
+	if tipoVotoIngresado == GOBERNADOR {
 		return votos.GOBERNADOR
 	}
 	return votos.INTENDENTE
 }
 
-func ImprimirTipoCompleto(tipo votos.TipoVoto, partido []votos.Partido) {
+/* ---------------------------- FUNCIONES DE IMPRESION ---------------------------- */
+
+func imprimirNombreDelTipo(tipo votos.TipoVoto) {
 	switch tipo {
-	case 0:
-		fmt.Println("Presidente:")
-		for i := 0; i < len(partido); i++ {
-			fmt.Println(partido[i].ObtenerResultado(tipo))
-		}
-		fmt.Println()
-	case 1:
-		fmt.Println("Gobernador:")
-		for i := 0; i < len(partido); i++ {
-			fmt.Println(partido[i].ObtenerResultado(tipo))
-		}
-		fmt.Println()
-	case 2:
-		fmt.Println("Intendente:")
-		for i := 0; i < len(partido); i++ {
-			fmt.Println(partido[i].ObtenerResultado(tipo))
-		}
-		fmt.Println()
+	case votos.PRESIDENTE:
+		fmt.Printf("%s:\n", PRESIDENTE)
+	case votos.GOBERNADOR:
+		fmt.Printf("%s:\n", GOBERNADOR)
+	case votos.INTENDENTE:
+		fmt.Printf("%s:\n", INTENDENTE)
 	}
 }
 
-func ImprimirImpugnados(cantidad int) {
-	if cantidad == 1 {
-		fmt.Printf("Votos Impugnados: %d voto\n", cantidad)
-	} else {
-		fmt.Printf("Votos Impugnados: %d votos\n", cantidad)
+func ImprimirTipoCompleto(tipo votos.TipoVoto, partidos []votos.Partido) {
+	imprimirNombreDelTipo(tipo)
+	for i := 0; i < len(partidos); i++ {
+		fmt.Println(partidos[i].ObtenerResultado(tipo))
 	}
+	fmt.Println()
+}
+
+func PalabraSegunCantidad(cantidad int) string {
+	if cantidad == 1 {
+		return SINGULAR
+	}
+	return PLURAL
 }

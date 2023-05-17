@@ -2,18 +2,26 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
-	errores "rerepolez/errores"
-	funcAux "rerepolez/funciones"
-	votos "rerepolez/votos"
-	TDACola "tdas/cola"
+	"rerepolez/acciones"
+	"rerepolez/errores"
+	"rerepolez/funciones"
 )
 
 const (
+	CANTIDAD_PARAMETROS_NECESARIOS = 3
+
+	INDICE_RUTA_PARTIDOS = 1
+	INDICE_RUTA_PADRONES = 2
+
+	INDICE_COMANDO = 0
+
+	INDICE_DNI_INGRESADO       = 1
+	INDICE_TIPO_INGRESADO      = 1
+	INDICE_NUM_LISTA_INGRESADO = 2
+
+	SEPARADOR_ENTRADA     = " "
 	ACCION_INGRESAR       = "ingresar"
 	ACCION_VOTAR          = "votar"
 	ACCION_DESHACER       = "deshacer"
@@ -21,106 +29,40 @@ const (
 )
 
 func main() {
-	filaDeVotacion := TDACola.CrearColaEnlazada[votos.Votante]()
+	filaDeVotacion := funciones.CrearFilaDeVotacion()
 	var documentosQueVotaron []int
 	var contadorDeVotosImpugnados int
 
 	scanner := bufio.NewScanner(os.Stdin)
-	var parametros []string = os.Args[1:]
-	if len(parametros) < 2 {
-		funcAux.MostrarError(new(errores.ErrorParametros))
+	var parametros []string = os.Args
+	if len(parametros) < CANTIDAD_PARAMETROS_NECESARIOS {
+		funciones.MostrarError(new(errores.ErrorParametros))
 	}
 
-	rutaPartidos := parametros[0]
-	rutaPadrones := parametros[1]
+	rutaPartidos := parametros[INDICE_RUTA_PARTIDOS]
+	rutaPadrones := parametros[INDICE_RUTA_PADRONES]
 
-	listaDePartidos := funcAux.ObtenerPartidos(rutaPartidos)
-	listaDeVotantes := funcAux.ObtenerVotantes(rutaPadrones)
+	listaDePartidos := funciones.ObtenerPartidos(rutaPartidos)
+	listaDeVotantes := funciones.ObtenerVotantes(rutaPadrones)
 
 	for scanner.Scan() {
 		entrada := scanner.Text()
-		entradaSeparada := strings.Split(entrada, " ")
-		comando := entradaSeparada[0]
+		entradaSeparada := funciones.SepararEntrada(entrada, SEPARADOR_ENTRADA)
+		comando := entradaSeparada[INDICE_COMANDO]
 
 		switch comando {
 		case ACCION_INGRESAR:
-			documentoIngresado := entradaSeparada[1]
-			validezDeEntrada, salida := funcAux.VerificarDNI(documentoIngresado, listaDeVotantes)
-			if !validezDeEntrada {
-				funcAux.MostrarSalida(salida)
-				continue
-			}
-			numeroDeDNI, _ := strconv.Atoi(documentoIngresado)
-			votante := votos.CrearVotante(numeroDeDNI)
-			filaDeVotacion.Encolar(votante)
-			funcAux.MostrarSalida(salida)
+			acciones.AccionIngresar(entradaSeparada[INDICE_DNI_INGRESADO], &filaDeVotacion, listaDeVotantes)
 
 		case ACCION_VOTAR:
-			tipoIngresado := entradaSeparada[1]
-			numDeListaIngresado := entradaSeparada[2]
-			validezDeEntrada, salida := funcAux.VerificarVoto(tipoIngresado, numDeListaIngresado, filaDeVotacion, documentosQueVotaron, listaDePartidos)
-			if !validezDeEntrada {
-				funcAux.MostrarSalida(salida)
-				continue
-			}
-			tipoDeVoto := funcAux.ConvertirEntradaATipoVoto(tipoIngresado)
-			numeroDeLista, _ := strconv.Atoi(numDeListaIngresado)
-			votante := filaDeVotacion.VerPrimero()
-			votante.Votar(tipoDeVoto, numeroDeLista)
-			funcAux.MostrarSalida(salida)
+			acciones.AccionVotar(entradaSeparada[INDICE_TIPO_INGRESADO], entradaSeparada[INDICE_NUM_LISTA_INGRESADO], &filaDeVotacion, documentosQueVotaron, listaDePartidos)
 
 		case ACCION_DESHACER:
-			validezDeAccion, salida := funcAux.VerificarColaYVotante(filaDeVotacion, documentosQueVotaron)
-			if !validezDeAccion {
-				funcAux.MostrarSalida(salida)
-				continue
-			}
-			votante := filaDeVotacion.VerPrimero()
-			err := votante.Deshacer()
-			if err != nil {
-				funcAux.MostrarSalida(err.Error())
-				continue
-			}
-			funcAux.MostrarSalida(salida)
+			acciones.AccionDeshacer(&filaDeVotacion, documentosQueVotaron)
 
 		case ACCION_FINALIZAR_VOTO:
-			validezDeAccion, salida := funcAux.VerificarColaYVotante(filaDeVotacion, documentosQueVotaron)
-			if !validezDeAccion {
-				funcAux.MostrarSalida(salida)
-				continue
-			}
-			votante := filaDeVotacion.Desencolar()
-			voto, err := votante.FinVoto()
-			if err != nil {
-				funcAux.MostrarSalida(err.Error())
-				continue
-			}
-
-			documentosQueVotaron = append(documentosQueVotaron, votante.LeerDNI())
-			funcAux.MostrarSalida(salida)
-
-			if voto.Impugnado {
-				contadorDeVotosImpugnados++
-				continue
-			}
-			var tipoDeVoto votos.TipoVoto
-			for i := 0; i < len(voto.VotoPorTipo); i++ {
-				numeroDeLista := voto.VotoPorTipo[i]
-				listaDePartidos[numeroDeLista].VotadoPara(tipoDeVoto)
-				tipoDeVoto++
-			}
+			acciones.AccionFinVotar(&filaDeVotacion, &documentosQueVotaron, &listaDePartidos, &contadorDeVotosImpugnados)
 		}
 	}
-	if !filaDeVotacion.EstaVacia() {
-		err := new(errores.ErrorCiudadanosSinVotar)
-		for !filaDeVotacion.EstaVacia() {
-			filaDeVotacion.Desencolar()
-		}
-		fmt.Println(err)
-	}
-	var tipoDeVoto votos.TipoVoto
-	for tipoDeVoto = 0; tipoDeVoto < 3; tipoDeVoto++ {
-		funcAux.ImprimirTipoCompleto(tipoDeVoto, listaDePartidos)
-	}
-	funcAux.ImprimirImpugnados(contadorDeVotosImpugnados)
+	acciones.FinalizarPeriodoDeVotacion(&filaDeVotacion, &listaDePartidos, &contadorDeVotosImpugnados)
 }

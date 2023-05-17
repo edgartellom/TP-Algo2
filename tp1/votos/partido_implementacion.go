@@ -2,17 +2,24 @@ package votos
 
 import "fmt"
 
-const NOMBRE_PARTIDO_EN_BLANCO = "Votos en Blanco"
+const (
+	NOMBRE_PARTIDO_EN_BLANCO = "Votos en Blanco"
+	SINGULAR                 = "voto"
+	PLURAL                   = "votos"
+)
 
-type partidoImplementacion struct {
-	nombreDelPartido     string
-	votosActuales        [CANT_VOTACION]int
-	candidatosDelPartido [CANT_VOTACION]string
+type partido struct {
+	nombreDelPartido string
+	votosActuales    [CANT_VOTACION]int
 }
 
 type partidoEnBlanco struct {
-	nombreDelPartido string
-	votosActuales    [CANT_VOTACION]int
+	partido
+}
+
+type partidoImplementacion struct {
+	partido
+	candidatosDelPartido [CANT_VOTACION]string
 }
 
 func CrearPartido(nombre string, candidatos [CANT_VOTACION]string) Partido {
@@ -32,24 +39,23 @@ func CrearVotosEnBlanco() Partido {
 	return partido
 }
 
-func (partido *partidoImplementacion) VotadoPara(tipo TipoVoto) {
+func (partido *partido) palabraSegunCantidad(tipo TipoVoto) string {
+	if partido.votosActuales[tipo] == 1 {
+		return SINGULAR
+	}
+	return PLURAL
+}
+
+func (partido *partido) VotadoPara(tipo TipoVoto) {
 	(*partido).votosActuales[tipo]++
 }
 
-func (partido partidoImplementacion) ObtenerResultado(tipo TipoVoto) string {
-	if partido.votosActuales[tipo] == 1 {
-		return fmt.Sprintf("%s - %s: %d voto", partido.nombreDelPartido, partido.candidatosDelPartido[tipo], partido.votosActuales[tipo])
-	}
-	return fmt.Sprintf("%s - %s: %d votos", partido.nombreDelPartido, partido.candidatosDelPartido[tipo], partido.votosActuales[tipo])
+func (partido *partido) ObtenerResultado(tipo TipoVoto) string {
+	cantidad := partido.palabraSegunCantidad(tipo)
+	return fmt.Sprintf("%s: %d %s", partido.nombreDelPartido, partido.votosActuales[tipo], cantidad)
 }
 
-func (blanco *partidoEnBlanco) VotadoPara(tipo TipoVoto) {
-	(*blanco).votosActuales[tipo]++
-}
-
-func (blanco partidoEnBlanco) ObtenerResultado(tipo TipoVoto) string {
-	if blanco.votosActuales[tipo] == 1 {
-		return fmt.Sprintf("%s: %d voto", blanco.nombreDelPartido, blanco.votosActuales[tipo])
-	}
-	return fmt.Sprintf("%s: %d votos", blanco.nombreDelPartido, blanco.votosActuales[tipo])
+func (partido *partidoImplementacion) ObtenerResultado(tipo TipoVoto) string {
+	cantidad := partido.palabraSegunCantidad(tipo)
+	return fmt.Sprintf("%s - %s: %d %s", partido.nombreDelPartido, partido.candidatosDelPartido[tipo], partido.votosActuales[tipo], cantidad)
 }
