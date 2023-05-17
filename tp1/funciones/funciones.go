@@ -17,6 +17,8 @@ const (
 	SINGULAR          = "voto"
 	PLURAL            = "votos"
 
+	LARGO_COUNTING = 10
+
 	SALIDA_EXITOSA = "OK"
 
 	PRESIDENTE = "Presidente"
@@ -96,49 +98,52 @@ func obtenerPadrones(ruta string) []int {
 		padrones = append(padrones, numeroDNI)
 	}
 
-	padrones = ordenarPadronesMergeSort(padrones)
+	padrones = ordenarPadronesRadixSort(padrones)
 	return padrones
 }
 
-func merge(izquierda, derecha []int) []int {
-	i, j := 0, 0
-	resultante := make([]int, 0)
-	for i < len(izquierda) && j < len(derecha) {
-		if izquierda[i] < derecha[j] {
-			resultante = append(resultante, izquierda[i])
-			i++
-		} else {
-			resultante = append(resultante, derecha[j])
-			j++
+/* --------------------------------- ORDENAMIENTO DE PADRONES --------------------------------- */
+
+func obtenerValorMaximo(padrones []int) int {
+	var max int
+	for _, dni := range padrones {
+		if dni > max {
+			max = dni
 		}
 	}
-	resultante = append(resultante, izquierda[i:]...)
-	resultante = append(resultante, derecha[j:]...)
-	return resultante
+	return max
 }
 
-func ordenarPadronesMergeSort(padrones []int) []int {
-	if len(padrones) < 2 {
-		return padrones
+func ordenarPadronesRadixSort(padrones []int) []int {
+	maximo := obtenerValorMaximo(padrones)
+
+	divisor := 1
+	for maximo/divisor >= 1 {
+		padrones = countingSortSimplificado(padrones, divisor)
+		divisor *= LARGO_COUNTING
 	}
-	medio := len(padrones) / 2
-	izquierda := ordenarPadronesMergeSort(padrones[:medio])
-	derecha := ordenarPadronesMergeSort(padrones[medio:])
-	return merge(izquierda, derecha)
+	return padrones
 }
 
-func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
-	if len(votantes) == 0 {
-		return false
+func countingSortSimplificado(padrones []int, divisor int) []int {
+	colas := make([]TDACola.Cola[int], LARGO_COUNTING)
+	for i := range colas {
+		colas[i] = TDACola.CrearColaEnlazada[int]()
 	}
-	medio := len(votantes) / 2
-	if dni == votantes[medio].LeerDNI() {
-		return true
+	for _, dni := range padrones {
+		indiceCorrespondiente := (dni / divisor) % LARGO_COUNTING
+		colas[indiceCorrespondiente].Encolar(dni)
 	}
-	if dni < votantes[medio].LeerDNI() {
-		return documentoEnVotantes(dni, votantes[:medio])
+
+	ordenadas := make([]int, len(padrones))
+	var indice int
+	for _, cola := range colas {
+		for !cola.EstaVacia() {
+			ordenadas[indice] = cola.Desencolar()
+			indice++
+		}
 	}
-	return documentoEnVotantes(dni, votantes[medio+1:])
+	return ordenadas
 }
 
 /* ---------------------------- FUNCIONES DE VERIFICACION ---------------------------- */
@@ -153,6 +158,20 @@ func VerificarDNI(dni string, votantes []votos.Votante) (bool, string) {
 		return false, err.Error()
 	}
 	return true, SALIDA_EXITOSA
+}
+
+func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
+	if len(votantes) == 0 {
+		return false
+	}
+	medio := len(votantes) / 2
+	if dni == votantes[medio].LeerDNI() {
+		return true
+	}
+	if dni < votantes[medio].LeerDNI() {
+		return documentoEnVotantes(dni, votantes[:medio])
+	}
+	return documentoEnVotantes(dni, votantes[medio+1:])
 }
 
 func tipoValido(tipoIngresado string) bool {
