@@ -48,104 +48,28 @@ func CrearABB[K comparable, V any](funcion_cmp func(K, K) int) DiccionarioOrdena
 
 /* ------------------------------------------ FUNCIONES AUXILIARES ------------------------------------------ */
 
-func (abb *abb[K, V]) _obtenerPadreEHijo(padre, hijo *nodoAbb[K, V], clave K) (*nodoAbb[K, V], *nodoAbb[K, V]) {
-	if padre == nil && hijo == nil {
-		return nil, nil
+func (abb *abb[K, V]) obtenerPadreEHijo(padre, hijo *nodoAbb[K, V], clave K) (*nodoAbb[K, V], *nodoAbb[K, V]) {
+	if hijo == nil {
+		return padre, hijo
 	}
-	orientacion := abb.cmp(hijo.clave, clave)
-	if (orientacion < 0 && hijo.izquierdo == nil) || (orientacion > 0 && hijo.derecho == nil) {
-		return hijo, nil
-	}
+	orientacion := abb.cmp(clave, hijo.clave)
+
 	if orientacion < 0 {
-		return abb._obtenerPadreEHijo(hijo, hijo.izquierdo, clave)
-	} else if orientacion > 0 {
-		return abb._obtenerPadreEHijo(hijo, hijo.derecho, clave)
+		return abb.obtenerPadreEHijo(hijo, hijo.izquierdo, clave)
+	}
+	if orientacion > 0 {
+		return abb.obtenerPadreEHijo(hijo, hijo.derecho, clave)
 	}
 	return padre, hijo
 }
 
-func (abb *abb[K, V]) obtenerPadreEHijo(clave K) (*nodoAbb[K, V], *nodoAbb[K, V]) {
-	return abb._obtenerPadreEHijo(nil, abb.raiz, clave)
-}
-
 func (abb *abb[K, V]) agregarHijo(nodo *nodoAbb[K, V], clave K, valor V) {
-	orientacion := abb.cmp(nodo.clave, clave)
+	orientacion := abb.cmp(clave, nodo.clave)
 	if orientacion < 0 {
 		nodo.izquierdo = crearNodoAbb(clave, valor)
 	} else {
 		nodo.derecho = crearNodoAbb(clave, valor)
 	}
-	abb.cantidad++
-}
-
-func (abb *abb[K, V]) Guardar(clave K, valor V) {
-	padre, hijo := abb.obtenerPadreEHijo(clave)
-	if padre == nil && hijo == nil {
-		abb.raiz = crearNodoAbb(clave, valor)
-		abb.cantidad++
-	} else if padre != nil && hijo == nil {
-		abb.agregarHijo(padre, clave, valor)
-	} else {
-		hijo.dato = valor
-	}
-}
-
-func (abb *abb[K, V]) Pertenece(clave K) bool {
-	_, hijo := abb.obtenerPadreEHijo(clave)
-	return hijo != nil
-}
-
-func (abb *abb[K, V]) Obtener(clave K) V {
-	_, hijo := abb.obtenerPadreEHijo(clave)
-	abb.comprobar(hijo)
-	return hijo.dato
-}
-
-func (abb *abb[K, V]) borrar0Hijos(padre *nodoAbb[K, V], clave K) {
-	orientacion := abb.cmp(padre.clave, clave)
-	if orientacion < 0 {
-		padre.izquierdo = nil
-	} else {
-		padre.derecho = nil
-	}
-	abb.cantidad--
-}
-
-func (abb *abb[K, V]) borrar1Hijo(padre, hijo *nodoAbb[K, V], clave K) {
-	orientacion := abb.cmp(padre.clave, clave)
-	if orientacion < 0 {
-		if hijo.derecho != nil {
-			padre.izquierdo = hijo.derecho
-		} else {
-			padre.izquierdo = hijo.izquierdo
-		}
-	} else {
-		if hijo.derecho != nil {
-			padre.derecho = hijo.derecho
-		} else {
-			padre.derecho = hijo.izquierdo
-		}
-	}
-	abb.cantidad--
-}
-
-func (abb *abb[K, V]) Borrar(clave K) V {
-	padre, hijo := abb.obtenerPadreEHijo(clave)
-	abb.comprobar(hijo)
-	if abb.cantidad == 1 {
-		abb.raiz = nil
-		abb.cantidad--
-	} else {
-		cantidadDeHijos := abb.contarHijos(hijo)
-		switch cantidadDeHijos {
-		case 0:
-			abb.borrar0Hijos(padre, clave)
-		case 1:
-			abb.borrar1Hijo(padre, hijo, clave)
-		case 2:
-		}
-	}
-	return (*hijo).dato
 }
 
 func (abb *abb[K, V]) contarHijos(nodo *nodoAbb[K, V]) int {
@@ -159,29 +83,125 @@ func (abb *abb[K, V]) contarHijos(nodo *nodoAbb[K, V]) int {
 	return contador
 }
 
+func (abb *abb[K, V]) borrar0Hijos(padre *nodoAbb[K, V], clave K) {
+	orientacion := abb.cmp(clave, padre.clave)
+	if orientacion < 0 {
+		padre.izquierdo = nil
+	} else {
+		padre.derecho = nil
+	}
+}
+
+func (abb *abb[K, V]) borrar1Hijo(padre, hijo *nodoAbb[K, V], clave K) {
+	if padre == nil {
+		if hijo.derecho != nil {
+			abb.raiz = hijo.derecho
+		} else {
+			abb.raiz = hijo.izquierdo
+		}
+	} else {
+		orientacion := abb.cmp(clave, padre.clave)
+		if orientacion < 0 && hijo.derecho != nil {
+			padre.izquierdo = hijo.derecho
+		} else if orientacion < 0 && hijo.izquierdo != nil {
+			padre.izquierdo = hijo.izquierdo
+		} else if orientacion > 0 && hijo.derecho != nil {
+			padre.derecho = hijo.derecho
+		} else if orientacion > 0 && hijo.izquierdo != nil {
+			padre.derecho = hijo.izquierdo
+		}
+	}
+}
+
+func (abb *abb[K, V]) obtenerElMasDerechoDelLadoIzquierdo(nodo *nodoAbb[K, V]) K {
+	if nodo.derecho == nil {
+		return nodo.clave
+	}
+	return abb.obtenerElMasDerechoDelLadoIzquierdo(nodo.derecho)
+}
+
+/* ------------------------------------------ PRIMITIVAS ------------------------------------------ */
+
+func (abb *abb[K, V]) Guardar(clave K, valor V) {
+	padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	if hijo != nil {
+		hijo.dato = valor
+	} else {
+		if padre == nil {
+			abb.raiz = crearNodoAbb(clave, valor)
+		} else {
+			abb.agregarHijo(padre, clave, valor)
+		}
+		abb.cantidad++
+	}
+}
+
+func (abb *abb[K, V]) Pertenece(clave K) bool {
+	_, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	return hijo != nil
+}
+
+func (abb *abb[K, V]) Obtener(clave K) V {
+	_, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	abb.comprobar(hijo)
+	return hijo.dato
+}
+
+func (abb *abb[K, V]) Borrar(clave K) V {
+	padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	abb.comprobar(hijo)
+	datoBorrado := (*hijo).dato
+	if abb.cantidad == 1 {
+		abb.raiz = nil
+		abb.cantidad--
+	} else {
+		cantidadDeHijos := abb.contarHijos(hijo)
+		switch cantidadDeHijos {
+		case 0:
+			abb.borrar0Hijos(padre, clave)
+			abb.cantidad--
+		case 1:
+			abb.borrar1Hijo(padre, hijo, clave)
+			abb.cantidad--
+		case 2:
+			claveDelReemplazante := abb.obtenerElMasDerechoDelLadoIzquierdo(hijo.izquierdo)
+			valorDelReemplazante := abb.Borrar(claveDelReemplazante)
+			if padre != nil {
+				orientacion := abb.cmp(clave, padre.clave)
+				if orientacion < 0 {
+					padre.izquierdo.clave = claveDelReemplazante
+					padre.izquierdo.dato = valorDelReemplazante
+				} else {
+					padre.derecho.clave = claveDelReemplazante
+					padre.derecho.dato = valorDelReemplazante
+				}
+			} else {
+				abb.raiz.clave = claveDelReemplazante
+				abb.raiz.dato = valorDelReemplazante
+			}
+		}
+	}
+	return datoBorrado
+}
+
 func (abb *abb[K, V]) Cantidad() int {
 	return abb.cantidad
 }
 
-/* --------------------------------- NO FUNCIONA --------------------------------- */
-
-// func (abb *abb[K, V]) obtenerActual(nodo *nodoAbb[K, V]) *nodoAbb[K, V] {
-// 	if nodo.izquierdo != nil {
-// 		nodo = abb.obtenerActual(nodo.izquierdo)
-// 	} else if nodo.derecho != nil {
-// 		nodo = abb.obtenerActual(nodo.derecho)
-// 	}
-// 	return nodo
-// }
+func (abb *abb[K, V]) _Iterar(nodo *nodoAbb[K, V], visitar func(clave K, dato V) bool) {
+	if nodo == nil {
+		return
+	}
+	if nodo.izquierdo != nil {
+		abb._Iterar(nodo.izquierdo, visitar)
+	}
+	if nodo.derecho != nil {
+		abb._Iterar(nodo.derecho, visitar)
+	}
+}
 
 func (abb *abb[K, V]) Iterar(visitar func(clave K, dato V) bool) {
-	for actual := abb.raiz; actual != nil && visitar(actual.clave, actual.dato); {
-		if actual.izquierdo != nil {
-			actual = actual.izquierdo
-		} else {
-			actual = actual.derecho
-		}
-	}
+	abb._Iterar(abb.raiz, visitar)
 }
 
 func (abb *abb[K, V]) IterarRango(desde *K, hasta *K, visitar func(clave K, dato V) bool) {
