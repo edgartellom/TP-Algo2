@@ -21,7 +21,7 @@ type iterAbb[K comparable, V any] struct {
 	padre  *nodoAbb[K, V]
 }
 
-func crearNodo[K comparable, V any](clave K, dato V) *nodoAbb[K, V] {
+func crearNodoAbb[K comparable, V any](clave K, dato V) *nodoAbb[K, V] {
 	nodo := new(nodoAbb[K, V])
 	(*nodo).clave = clave
 	(*nodo).dato = dato
@@ -35,67 +35,83 @@ func CrearABB[K comparable, V any](funcion_cmp func(K, K) int) DiccionarioOrdena
 }
 
 func (abb *abb[K, V]) Pertenece(clave K) bool {
-	nodo := abb.raiz.buscarNodo(clave, abb.cmp)
+	_, nodo := abb.buscarNodos(nil, abb.raiz, clave)
 	return nodo != nil
 }
 
-func (nodo *nodoAbb[K, V]) buscarNodo(clave K, cmp func(K, K) int) *nodoAbb[K, V] {
-	if nodo == nil {
-		return nodo
+func (abb *abb[K, V]) buscarNodos(padre, hijo *nodoAbb[K, V], clave K) (*nodoAbb[K, V], *nodoAbb[K, V]) {
+
+	if hijo == nil {
+		// actual = nodo
+		return padre, hijo
 	}
-	if cmp(clave, nodo.clave) < 0 {
-		return nodo.izquierdo.buscarNodo(clave, cmp)
+	if abb.cmp(hijo.clave, clave) < 0 {
+
+		return abb.buscarNodos(hijo, hijo.izquierdo, clave)
 	}
-	if cmp(clave, nodo.clave) > 0 {
-		return nodo.derecho.buscarNodo(clave, cmp)
+	if abb.cmp(hijo.clave, clave) > 0 {
+
+		return abb.buscarNodos(hijo, hijo.derecho, clave)
 	}
-	return nodo
+	return padre, hijo
 
 }
 
-func (abb *abb[K, V]) guardarNodo(nodo *nodoAbb[K, V], clave K, dato V, cmp func(K, K) int) {
-	if cmp(clave, nodo.clave) < 0 {
-		if nodo.izquierdo == nil {
-			nodo.izquierdo = crearNodo(clave, dato)
-			(*abb).cantidad++
-		} else {
-			abb.guardarNodo(nodo.izquierdo, clave, dato, cmp)
-		}
-	} else if cmp(clave, nodo.clave) > 0 {
-		if nodo.derecho == nil {
-			nodo.derecho = crearNodo(clave, dato)
-			(*abb).cantidad++
-		} else {
-			abb.guardarNodo(nodo.derecho, clave, dato, cmp)
-		}
-	} else {
-		nodo.dato = dato
-	}
-}
+// func (abb *abb[K, V]) guardarNodo(nodo *nodoAbb[K, V], clave K, dato V, cmp func(K, K) int) {
+// 	if cmp(clave, nodo.clave) < 0 {
+// 		if nodo.izquierdo == nil {
+// 			nodo.izquierdo = crearNodo(clave, dato)
+// 			(*abb).cantidad++
+// 		} else {
+// 			abb.guardarNodo(nodo.izquierdo, clave, dato, cmp)
+// 		}
+// 	} else if cmp(clave, nodo.clave) > 0 {
+// 		if nodo.derecho == nil {
+// 			nodo.derecho = crearNodo(clave, dato)
+// 			(*abb).cantidad++
+// 		} else {
+// 			abb.guardarNodo(nodo.derecho, clave, dato, cmp)
+// 		}
+// 	} else {
+// 		nodo.dato = dato
+// 	}
+// }
 
 func (abb *abb[K, V]) Guardar(clave K, dato V) {
-	if abb.raiz == nil {
-		abb.raiz = crearNodo(clave, dato)
+	padre, hijo := abb.buscarNodos(nil, abb.raiz, clave)
+
+	if hijo == nil {
+		if padre == nil {
+			abb.raiz = crearNodoAbb(clave, dato)
+		} else {
+			if abb.cmp(padre.clave, clave) < 0 {
+				padre.izquierdo = crearNodoAbb(clave, dato)
+			} else {
+				padre.derecho = crearNodoAbb(clave, dato)
+			}
+
+		}
 		(*abb).cantidad++
-		return
+	} else {
+		hijo.dato = dato
 	}
-	abb.guardarNodo(abb.raiz, clave, dato, abb.cmp)
+
 }
 
 func (abb *abb[K, V]) Obtener(clave K) V {
-	nodo := abb.raiz.buscarNodo(clave, abb.cmp)
+	_, nodo := abb.buscarNodos(nil, abb.raiz, clave)
 	comprobarSiNoPertenece(nodo)
-	return nodo.dato
+	return (*nodo).dato
 }
 
 func (abb *abb[K, V]) Borrar(clave K) V {
-	nodo := abb.raiz.buscarNodo(clave, abb.cmp)
+	_, nodo := abb.buscarNodos(nil, abb.raiz, clave)
 	comprobarSiNoPertenece(nodo)
 	// posicion := abb.obtenerPosicion(clave)
 
 	// abb.comprobarEstado(posicion)
 
-	dato := nodo.dato
+	dato := (*nodo).dato
 	// abb.tabla[posicion].estado = BORRADO
 	// abb.cantidad--
 	// abb.borrados++
