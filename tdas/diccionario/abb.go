@@ -1,5 +1,7 @@
 package diccionario
 
+import TDAPila "tdas/pila"
+
 type nodoAbb[K comparable, V any] struct {
 	izquierdo *nodoAbb[K, V]
 	derecho   *nodoAbb[K, V]
@@ -16,9 +18,10 @@ type abb[K comparable, V any] struct {
 }
 
 type iterAbb[K comparable, V any] struct {
-	abb    *abb[K, V]
-	actual *nodoAbb[K, V]
-	padre  *nodoAbb[K, V]
+	abb   *abb[K, V]
+	pila  TDAPila.Pila[*nodoAbb[K, V]]
+	desde *K
+	hasta *K
 }
 
 func crearNodoAbb[K comparable, V any](clave K, dato V) *nodoAbb[K, V] {
@@ -42,40 +45,20 @@ func (abb *abb[K, V]) Pertenece(clave K) bool {
 func (abb *abb[K, V]) buscarNodos(padre, hijo *nodoAbb[K, V], clave K) (*nodoAbb[K, V], *nodoAbb[K, V]) {
 
 	if hijo == nil {
-		// actual = nodo
 		return padre, hijo
 	}
-	if abb.cmp(hijo.clave, clave) < 0 {
 
+	if abb.cmp(clave, hijo.clave) < 0 {
 		return abb.buscarNodos(hijo, hijo.izquierdo, clave)
 	}
-	if abb.cmp(hijo.clave, clave) > 0 {
 
+	if abb.cmp(clave, hijo.clave) > 0 {
 		return abb.buscarNodos(hijo, hijo.derecho, clave)
 	}
+
 	return padre, hijo
 
 }
-
-// func (abb *abb[K, V]) guardarNodo(nodo *nodoAbb[K, V], clave K, dato V, cmp func(K, K) int) {
-// 	if cmp(clave, nodo.clave) < 0 {
-// 		if nodo.izquierdo == nil {
-// 			nodo.izquierdo = crearNodo(clave, dato)
-// 			(*abb).cantidad++
-// 		} else {
-// 			abb.guardarNodo(nodo.izquierdo, clave, dato, cmp)
-// 		}
-// 	} else if cmp(clave, nodo.clave) > 0 {
-// 		if nodo.derecho == nil {
-// 			nodo.derecho = crearNodo(clave, dato)
-// 			(*abb).cantidad++
-// 		} else {
-// 			abb.guardarNodo(nodo.derecho, clave, dato, cmp)
-// 		}
-// 	} else {
-// 		nodo.dato = dato
-// 	}
-// }
 
 func (abb *abb[K, V]) Guardar(clave K, dato V) {
 	padre, hijo := abb.buscarNodos(nil, abb.raiz, clave)
@@ -84,7 +67,7 @@ func (abb *abb[K, V]) Guardar(clave K, dato V) {
 		if padre == nil {
 			abb.raiz = crearNodoAbb(clave, dato)
 		} else {
-			if abb.cmp(padre.clave, clave) < 0 {
+			if abb.cmp(clave, padre.clave) < 0 {
 				padre.izquierdo = crearNodoAbb(clave, dato)
 			} else {
 				padre.derecho = crearNodoAbb(clave, dato)
@@ -95,7 +78,6 @@ func (abb *abb[K, V]) Guardar(clave K, dato V) {
 	} else {
 		hijo.dato = dato
 	}
-
 }
 
 func (abb *abb[K, V]) Obtener(clave K) V {
@@ -104,75 +86,178 @@ func (abb *abb[K, V]) Obtener(clave K) V {
 	return (*nodo).dato
 }
 
+func (abb *abb[K, V]) borrar0Hijos(padre *nodoAbb[K, V], clave K) {
+	if padre == nil {
+		abb.raiz = nil
+	} else {
+		if abb.cmp(clave, padre.clave) < 0 {
+			padre.izquierdo = nil
+		} else {
+			padre.derecho = nil
+		}
+	}
+}
+
+func (abb *abb[K, V]) borrar1Hijo(padre, nodo *nodoAbb[K, V], clave K) {
+	if nodo.izquierdo != nil && nodo.derecho == nil {
+		if padre == nil {
+			abb.raiz = nodo.izquierdo
+		} else {
+			if abb.cmp(clave, padre.clave) < 0 {
+				padre.izquierdo = nodo.izquierdo
+			} else {
+				padre.derecho = nodo.izquierdo
+			}
+		}
+
+	} else if nodo.izquierdo == nil && nodo.derecho != nil {
+		if padre == nil {
+			abb.raiz = nodo.derecho
+		} else {
+			if abb.cmp(clave, padre.clave) < 0 {
+				padre.izquierdo = nodo.derecho
+			} else {
+				padre.derecho = nodo.derecho
+			}
+		}
+	}
+
+}
+
+func (abb *abb[K, V]) borrar2Hijos(padre, nodo *nodoAbb[K, V], clave K) {
+	reemplazante := nodo.izquierdo
+	for reemplazante.derecho != nil {
+		reemplazante = reemplazante.derecho
+	}
+	clave_reemplazante := reemplazante.clave
+	dato_reemplazante := abb.Borrar(reemplazante.clave)
+	if padre == nil {
+		abb.raiz.clave = clave_reemplazante
+		abb.raiz.dato = dato_reemplazante
+	} else {
+		nodo.clave = clave_reemplazante
+		nodo.dato = dato_reemplazante
+	}
+
+}
+
 func (abb *abb[K, V]) Borrar(clave K) V {
-	_, nodo := abb.buscarNodos(nil, abb.raiz, clave)
+	padre, nodo := abb.buscarNodos(nil, abb.raiz, clave)
 	comprobarSiNoPertenece(nodo)
-	// posicion := abb.obtenerPosicion(clave)
-
-	// abb.comprobarEstado(posicion)
-
 	dato := (*nodo).dato
-	// abb.tabla[posicion].estado = BORRADO
-	// abb.cantidad--
-	// abb.borrados++
 
-	// nuevoTam := abb.tam / FACTOR_REDIMENSION
-	// if abb.factorDeCarga() <= FACTOR_ACHICAR && nuevoTam < LONGITUD_INICIAL {
-	// 	abb.redimensionarTabla(nuevoTam)
-	// }
+	if nodo.izquierdo == nil && nodo.derecho == nil {
+		abb.borrar0Hijos(padre, clave)
 
+	} else if nodo.izquierdo == nil || nodo.derecho == nil {
+		abb.borrar1Hijo(padre, nodo, clave)
+
+	} else {
+		abb.borrar2Hijos(padre, nodo, clave)
+	}
+	abb.cantidad--
 	return dato
+
 }
 
 func (abb *abb[K, V]) Cantidad() int {
 	return abb.cantidad
 }
 
-func (abb *abb[K, V]) Iterar(visitar func(clave K, dato V) bool) {
-	if abb.raiz == nil {
+func (abb *abb[K, V]) iterar(nodo *nodoAbb[K, V], visitar func(clave K, dato V) bool) {
+	if nodo == nil {
 		return
 	}
+	if nodo.izquierdo != nil {
+		abb.iterar(nodo.izquierdo, visitar)
+	}
+	if !visitar(nodo.clave, nodo.dato) {
+		return
+	}
+	if nodo.derecho != nil {
+		abb.iterar(nodo.derecho, visitar)
+	}
+}
+
+func (abb *abb[K, V]) Iterar(visitar func(clave K, dato V) bool) {
+	abb.iterar(abb.raiz, visitar)
 
 }
 
 func (abb *abb[K, V]) Iterador() IterDiccionario[K, V] {
 	iter := new(iterAbb[K, V])
 	iter.abb = abb
-	iter.actual = abb.raiz
-	// iter.actual, iter.posicion = obtenerCeldaOcupada(abb.tabla, 0)
+	iter.pila = TDAPila.CrearPilaDinamica[*nodoAbb[K, V]]()
+
+	for nodo := abb.raiz; nodo != nil; nodo = nodo.izquierdo {
+		iter.pila.Apilar(nodo)
+	}
 	return iter
 }
 
-func (abb *abb[K, V]) IterarRango(desde *K, hasta *K, visitar func(clave K, dato V) bool) {
+func (abb *abb[K, V]) estaEnelRango(nodo *nodoAbb[K, V], desde, hasta *K) bool {
+	return (abb.cmp(nodo.clave, *desde) >= 0 && abb.cmp(nodo.clave, *hasta) <= 0)
+}
 
+func (abb *abb[K, V]) iterarRango(nodo *nodoAbb[K, V], desde, hasta *K, visitar func(clave K, dato V) bool) {
+	if nodo == nil {
+		return
+	}
+	if nodo.izquierdo != nil && abb.estaEnelRango(nodo.izquierdo, desde, hasta) {
+		abb.iterar(nodo.izquierdo, visitar)
+	}
+	if !visitar(nodo.clave, nodo.dato) && abb.estaEnelRango(nodo, desde, hasta) {
+		return
+	}
+	if nodo.derecho != nil && abb.estaEnelRango(nodo.derecho, desde, hasta) {
+		abb.iterar(nodo.derecho, visitar)
+	}
+}
+
+func (abb *abb[K, V]) IterarRango(desde *K, hasta *K, visitar func(clave K, dato V) bool) {
+	abb.iterarRango(abb.raiz, desde, hasta, visitar)
 }
 
 func (abb *abb[K, V]) IteradorRango(desde *K, hasta *K) IterDiccionario[K, V] {
 	iter := new(iterAbb[K, V])
 	iter.abb = abb
-	// iter.actual, iter.posicion = obtenerCeldaOcupada(abb.tabla, 0)
+	iter.pila = TDAPila.CrearPilaDinamica[*nodoAbb[K, V]]()
+	iter.desde = desde
+	iter.hasta = hasta
+
+	for nodo := abb.raiz; nodo != nil && abb.cmp(nodo.clave, *iter.hasta) <= 0; nodo = nodo.izquierdo {
+		if abb.cmp(nodo.clave, *iter.desde) > 0 {
+			iter.pila.Apilar(nodo)
+		}
+	}
 	return iter
 }
 
 func (iter *iterAbb[K, V]) HaySiguiente() bool {
-	return iter.actual != nil
+	estaVacia := iter.pila.EstaVacia()
+	if !estaVacia && iter.hasta != nil {
+		return !(iter.abb.cmp(iter.pila.VerTope().clave, *iter.hasta) > 0)
+	}
+	return !estaVacia
 }
 
 func (iter *iterAbb[K, V]) VerActual() (K, V) {
 	iter.comprobarIteradorFinalizo()
-
-	return iter.actual.clave, iter.actual.dato
+	nodo := iter.pila.VerTope()
+	return nodo.clave, nodo.dato
 }
 
 func (iter *iterAbb[K, V]) Siguiente() {
 	iter.comprobarIteradorFinalizo()
 
-	if iter.actual.izquierdo != nil {
-		iter.actual = iter.actual.izquierdo
-	}
-	iter.Siguiente()
-	if iter.actual.derecho != nil {
-		iter.actual = iter.actual.derecho
+	for nodo := iter.pila.Desapilar().derecho; nodo != nil; nodo = nodo.izquierdo {
+		if iter.desde != nil {
+			if iter.abb.cmp(nodo.clave, *iter.desde) > 0 {
+				iter.pila.Apilar(nodo)
+			}
+		} else {
+			iter.pila.Apilar(nodo)
+		}
 	}
 }
 

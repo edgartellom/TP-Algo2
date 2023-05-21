@@ -13,7 +13,6 @@ type pilaDinamica[T any] struct {
 
 func CrearPilaDinamica[T any]() Pila[T] {
 	pila := new(pilaDinamica[T])
-	// pila.cantidad = 0
 	pila.datos = make([]T, capInicial)
 	return pila
 }

@@ -7,12 +7,26 @@ import (
 	"strconv"
 	"strings"
 
-	errores "rerepolez/errores"
-	votos "rerepolez/votos"
+	"rerepolez/errores"
+	"rerepolez/votos"
 	TDACola "tdas/cola"
 )
 
-const SALIDA_EXITOSA = "OK"
+const (
+	SEPARADOR_ARCHIVO = ","
+	SINGULAR          = "voto"
+	PLURAL            = "votos"
+
+	LARGO_COUNTING = 10
+
+	SALIDA_EXITOSA = "OK"
+
+	PRESIDENTE = "Presidente"
+	GOBERNADOR = "Gobernador"
+	INTENDENTE = "Intendente"
+)
+
+/* ---------------------------- FUNCIONES DE GENERALES ---------------------------- */
 
 func MostrarError(err error) {
 	fmt.Fprintln(os.Stdout, err)
@@ -31,6 +45,16 @@ func abrirArchivo(ruta string) *os.File {
 	return archivo
 }
 
+func CrearFilaDeVotacion() TDACola.Cola[votos.Votante] {
+	return TDACola.CrearColaEnlazada[votos.Votante]()
+}
+
+func SepararEntrada(entrada string, separador string) []string {
+	return strings.Split(entrada, separador)
+}
+
+/* ---------------------------- FUNCIONES DE EXTRACCION DE INFORMACION ---------------------------- */
+
 func ObtenerPartidos(ruta string) []votos.Partido {
 	archivoDePartidos := abrirArchivo(ruta)
 	defer archivoDePartidos.Close()
@@ -42,10 +66,10 @@ func ObtenerPartidos(ruta string) []votos.Partido {
 	scanner := bufio.NewScanner(archivoDePartidos)
 	for scanner.Scan() {
 		lineaDePartido := scanner.Text()
-		partidoEnFormaDeLista := strings.Split(lineaDePartido, ",")
+		partidoEnFormaDeLista := strings.Split(lineaDePartido, SEPARADOR_ARCHIVO)
 		nombre := partidoEnFormaDeLista[0]
 		candidatos := [votos.CANT_VOTACION]string{partidoEnFormaDeLista[1], partidoEnFormaDeLista[2], partidoEnFormaDeLista[3]}
-		partidoNuevo := votos.CrearPartido(nombre, candidatos)
+		partidoNuevo := votos.CrearPartidoPolitico(nombre, candidatos)
 		partidos = append(partidos, partidoNuevo)
 	}
 	return partidos
@@ -74,35 +98,67 @@ func obtenerPadrones(ruta string) []int {
 		padrones = append(padrones, numeroDNI)
 	}
 
-	padrones = ordenarPadronesMergeSort(padrones)
+	padrones = ordenarPadronesRadixSort(padrones)
 	return padrones
 }
 
-func merge(izquierda, derecha []int) []int {
-	i, j := 0, 0
-	resultante := make([]int, 0)
-	for i < len(izquierda) && j < len(derecha) {
-		if izquierda[i] < derecha[j] {
-			resultante = append(resultante, izquierda[i])
-			i++
-		} else {
-			resultante = append(resultante, derecha[j])
-			j++
+/* --------------------------------- ORDENAMIENTO DE PADRONES --------------------------------- */
+
+func obtenerValorMaximo(padrones []int) int {
+	var max int
+	for _, dni := range padrones {
+		if dni > max {
+			max = dni
 		}
 	}
-	resultante = append(resultante, izquierda[i:]...)
-	resultante = append(resultante, derecha[j:]...)
-	return resultante
+	return max
 }
 
-func ordenarPadronesMergeSort(padrones []int) []int {
-	if len(padrones) < 2 {
-		return padrones
+func ordenarPadronesRadixSort(padrones []int) []int {
+	maximo := obtenerValorMaximo(padrones)
+
+	divisor := 1
+	for maximo/divisor >= 1 {
+		padrones = countingSortSimplificado(padrones, divisor)
+		divisor *= LARGO_COUNTING
 	}
-	medio := len(padrones) / 2
-	izquierda := ordenarPadronesMergeSort(padrones[:medio])
-	derecha := ordenarPadronesMergeSort(padrones[medio:])
-	return merge(izquierda, derecha)
+	return padrones
+}
+
+func countingSortSimplificado(padrones []int, divisor int) []int {
+	colas := make([]TDACola.Cola[int], LARGO_COUNTING)
+	for i := range colas {
+		colas[i] = TDACola.CrearColaEnlazada[int]()
+	}
+	for _, dni := range padrones {
+		indiceCorrespondiente := (dni / divisor) % LARGO_COUNTING
+		colas[indiceCorrespondiente].Encolar(dni)
+	}
+
+	ordenadas := make([]int, len(padrones))
+	var indice int
+	for _, cola := range colas {
+		for !cola.EstaVacia() {
+			ordenadas[indice] = cola.Desencolar()
+			indice++
+		}
+	}
+	return ordenadas
+}
+
+/* ---------------------------- FUNCIONES DE VERIFICACION ---------------------------- */
+
+func VerificarDNI(dni string, votantes []votos.Votante) (bool, string) {
+	numeroDNI, err := strconv.Atoi(dni)
+	if err != nil || numeroDNI <= 0 {
+		err = new(errores.DNIError)
+	} else if !documentoEnVotantes(numeroDNI, votantes) {
+		err = new(errores.DNIFueraPadron)
+	}
+	if err == nil {
+		return true, SALIDA_EXITOSA
+	}
+	return false, err.Error()
 }
 
 func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
@@ -112,38 +168,19 @@ func documentoEnVotantes(dni int, votantes []votos.Votante) bool {
 	medio := len(votantes) / 2
 	if dni == votantes[medio].LeerDNI() {
 		return true
-	}
-	if dni < votantes[medio].LeerDNI() {
+	} else if dni < votantes[medio].LeerDNI() {
 		return documentoEnVotantes(dni, votantes[:medio])
 	}
 	return documentoEnVotantes(dni, votantes[medio+1:])
 }
 
-func VerificarDNI(dni string, votantes []votos.Votante) (bool, string) {
-	numeroDNI, err := strconv.Atoi(dni)
-	if err != nil || numeroDNI <= 0 {
-		err := new(errores.DNIError)
-		return false, err.Error()
-	} else if !documentoEnVotantes(numeroDNI, votantes) {
-		err := new(errores.DNIFueraPadron)
-		return false, err.Error()
-	}
-	return true, SALIDA_EXITOSA
-}
-
 func tipoValido(tipoIngresado string) bool {
-	if tipoIngresado == "Presidente" || tipoIngresado == "Gobernador" || tipoIngresado == "Intendente" {
-		return true
-	}
-	return false
+	return tipoIngresado == PRESIDENTE || tipoIngresado == GOBERNADOR || tipoIngresado == INTENDENTE
 }
 
 func numeroDeListaValido(numeroDeLista string, cantidadDePartidos int) bool {
 	listaNumero, err := strconv.Atoi(numeroDeLista)
-	if err != nil || listaNumero > cantidadDePartidos {
-		return false
-	}
-	return true
+	return err == nil && listaNumero <= cantidadDePartidos
 }
 
 func verificarVotante(votante votos.Votante, votantesQueVotaron []int) bool {
@@ -176,54 +213,54 @@ func VerificarVoto(tipoDeVoto string, numeroDeLista string, filaDeVotantes TDACo
 	if !validez {
 		return validez, salida
 	}
+	var err error
 	if !tipoValido(tipoDeVoto) {
-		err := new(errores.ErrorTipoVoto)
-		return false, err.Error()
+		err = new(errores.ErrorTipoVoto)
+	} else if !numeroDeListaValido(numeroDeLista, len(listaDePartidos)-1) {
+		err = new(errores.ErrorAlternativaInvalida)
 	}
-	if !numeroDeListaValido(numeroDeLista, len(listaDePartidos)-1) {
-		err := new(errores.ErrorAlternativaInvalida)
-		return false, err.Error()
+	if err == nil {
+		return true, SALIDA_EXITOSA
 	}
-	return true, SALIDA_EXITOSA
+	return false, err.Error()
 }
 
+/* ---------------------------- FUNCION PARA CONVERTIR ENTRADA ---------------------------- */
+
 func ConvertirEntradaATipoVoto(tipoVotoIngresado string) votos.TipoVoto {
-	if tipoVotoIngresado == "Presidente" {
+	if tipoVotoIngresado == PRESIDENTE {
 		return votos.PRESIDENTE
 	}
-	if tipoVotoIngresado == "Gobernador" {
+	if tipoVotoIngresado == GOBERNADOR {
 		return votos.GOBERNADOR
 	}
 	return votos.INTENDENTE
 }
 
-func ImprimirTipoCompleto(tipo votos.TipoVoto, partido []votos.Partido) {
+/* ---------------------------- FUNCIONES DE IMPRESION ---------------------------- */
+
+func imprimirNombreDelTipo(tipo votos.TipoVoto) {
 	switch tipo {
-	case 0:
-		fmt.Println("Presidente:")
-		for i := 0; i < len(partido); i++ {
-			fmt.Println(partido[i].ObtenerResultado(tipo))
-		}
-		fmt.Println()
-	case 1:
-		fmt.Println("Gobernador:")
-		for i := 0; i < len(partido); i++ {
-			fmt.Println(partido[i].ObtenerResultado(tipo))
-		}
-		fmt.Println()
-	case 2:
-		fmt.Println("Intendente:")
-		for i := 0; i < len(partido); i++ {
-			fmt.Println(partido[i].ObtenerResultado(tipo))
-		}
-		fmt.Println()
+	case votos.PRESIDENTE:
+		fmt.Printf("%s:\n", PRESIDENTE)
+	case votos.GOBERNADOR:
+		fmt.Printf("%s:\n", GOBERNADOR)
+	case votos.INTENDENTE:
+		fmt.Printf("%s:\n", INTENDENTE)
 	}
 }
 
-func ImprimirImpugnados(cantidad int) {
-	if cantidad == 1 {
-		fmt.Printf("Votos Impugnados: %d voto\n", cantidad)
-	} else {
-		fmt.Printf("Votos Impugnados: %d votos\n", cantidad)
+func ImprimirTipoCompleto(tipo votos.TipoVoto, partidos []votos.Partido) {
+	imprimirNombreDelTipo(tipo)
+	for i := 0; i < len(partidos); i++ {
+		fmt.Println(partidos[i].ObtenerResultado(tipo))
 	}
+	fmt.Println()
+}
+
+func PalabraSegunCantidad(cantidad int) string {
+	if cantidad == 1 {
+		return SINGULAR
+	}
+	return PLURAL
 }
