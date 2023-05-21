@@ -204,13 +204,13 @@ func (abb *abb[K, V]) iterarRango(nodo *nodoAbb[K, V], desde, hasta *K, visitar 
 		return
 	}
 	if nodo.izquierdo != nil && abb.estaEnelRango(nodo.izquierdo, desde, hasta) {
-		abb.iterar(nodo.izquierdo, visitar)
+		abb.iterarRango(nodo.izquierdo, desde, hasta, visitar)
 	}
 	if !visitar(nodo.clave, nodo.dato) && abb.estaEnelRango(nodo, desde, hasta) {
 		return
 	}
 	if nodo.derecho != nil && abb.estaEnelRango(nodo.derecho, desde, hasta) {
-		abb.iterar(nodo.derecho, visitar)
+		abb.iterarRango(nodo.derecho, desde, hasta, visitar)
 	}
 }
 
