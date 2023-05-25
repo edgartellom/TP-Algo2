@@ -31,8 +31,8 @@ func CrearHeapArr[T comparable](arreglo []T, funcion_cmp func(T, T) int) ColaPri
 }
 
 func heapify[T comparable](arr *[]T, tam int, cmp fcmpHeap[T]) {
-	for i_elemento := tam - 1; i_elemento >= INICIO_DEL_ARREGLO; i_elemento-- {
-		downheap(arr, i_elemento, tam, cmp)
+	for posElemento := tam - 1; posElemento >= INICIO_DEL_ARREGLO; posElemento-- {
+		downheap(arr, posElemento, tam, cmp)
 	}
 }
 
@@ -64,41 +64,41 @@ func (heap heap[T]) Cantidad() int {
 	return heap.cantidad
 }
 
-func upheap[T comparable](arr *[]T, i_elemento int, cmp fcmpHeap[T]) {
-	if i_elemento == INICIO_DEL_ARREGLO {
+func upheap[T comparable](arr *[]T, posElemento int, cmp fcmpHeap[T]) {
+	if posElemento == INICIO_DEL_ARREGLO {
 		return
 	}
-	i_padre := (i_elemento - 1) / 2
-	if cmp((*arr)[i_padre], (*arr)[i_elemento]) < COMPARADOR {
-		swap(&(*arr)[i_elemento], &(*arr)[i_padre])
+	i_padre := (posElemento - 1) / 2
+	if cmp((*arr)[i_padre], (*arr)[posElemento]) < COMPARADOR {
+		swap(&(*arr)[posElemento], &(*arr)[i_padre])
 		upheap(arr, i_padre, cmp)
 	}
 }
 
-func obtenerIndHijoMayor[T comparable](arr *[]T, i_h_izq, i_h_der int, tam int, cmp fcmpHeap[T]) int {
-	if i_h_der >= tam || cmp((*arr)[i_h_izq], (*arr)[i_h_der]) > COMPARADOR {
-		return i_h_izq
+func obtenerIndHijoMayor[T comparable](arr *[]T, posHijoIzq, posHijoDer int, tam int, cmp fcmpHeap[T]) int {
+	if posHijoDer >= tam || cmp((*arr)[posHijoIzq], (*arr)[posHijoDer]) > COMPARADOR {
+		return posHijoIzq
 	}
-	return i_h_der
+	return posHijoDer
 }
 
-func swap[T comparable](x, y *T) {
-	*x, *y = *y, *x
+func swap[T comparable](elemento1, elemento2 *T) {
+	*elemento1, *elemento2 = *elemento2, *elemento1
 }
 
-func downheap[T comparable](arr *[]T, i_elemento int, tam int, cmp fcmpHeap[T]) {
-	if i_elemento == tam-1 {
+func downheap[T comparable](arr *[]T, posElemento int, tam int, cmp fcmpHeap[T]) {
+	if posElemento == tam-1 {
 		return
 	}
-	i_h_izq := 2*i_elemento + 1
-	i_h_der := 2*i_elemento + 2
-	if i_h_izq >= tam && i_h_der >= tam {
+	posHijoIzq := 2*posElemento + 1
+	posHijoDer := 2*posElemento + 2
+	if posHijoIzq >= tam {
 		return
 	}
-	i_h_mayor := obtenerIndHijoMayor(arr, i_h_izq, i_h_der, tam, cmp)
-	if cmp((*arr)[i_elemento], (*arr)[i_h_mayor]) < COMPARADOR {
-		swap(&(*arr)[i_elemento], &(*arr)[i_h_mayor])
-		downheap(arr, i_h_mayor, tam, cmp)
+	posHijoMayor := obtenerIndHijoMayor(arr, posHijoIzq, posHijoDer, tam, cmp)
+	if cmp((*arr)[posElemento], (*arr)[posHijoMayor]) < COMPARADOR {
+		swap(&(*arr)[posElemento], &(*arr)[posHijoMayor])
+		downheap(arr, posHijoMayor, tam, cmp)
 	}
 }
 
