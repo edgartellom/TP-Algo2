@@ -6,7 +6,11 @@ import (
 
 type funcCmp[K comparable] func(K, K) int
 
-const COMPARADOR = 0
+const (
+	PANIC_NO_PERTENECE = "La clave no pertenece al diccionario"
+	PANIC_ITERADOR     = "El iterador termino de iterar"
+	COMPARADOR         = 0
+)
 
 type abb[K comparable, V any] struct {
 	raiz     *nodoAbb[K, V]
@@ -173,13 +177,13 @@ func (abb *abb[K, V]) Pertenece(clave K) bool {
 
 func (abb *abb[K, V]) Obtener(clave K) V {
 	_, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	abb.comprobarNodo(hijo)
+	abb.comprobarExiste(hijo)
 	return hijo.dato
 }
 
 func (abb *abb[K, V]) Borrar(clave K) V {
 	padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	abb.comprobarNodo(hijo)
+	abb.comprobarExiste(hijo)
 	datoBorrado := (*hijo).dato
 
 	if hijo.izquierdo == nil && hijo.derecho == nil {
@@ -253,7 +257,7 @@ func (iter *iterAbb[K, V]) comprobarIteradorFinalizo() {
 	}
 }
 
-func (abb *abb[K, V]) comprobarNodo(nodo *nodoAbb[K, V]) {
+func (abb *abb[K, V]) comprobarExiste(nodo *nodoAbb[K, V]) {
 	if nodo == nil {
 		panic(PANIC_NO_PERTENECE)
 	}
