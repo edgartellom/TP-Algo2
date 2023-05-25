@@ -5,6 +5,8 @@ const (
 	FACTOR_DE_REDIMENSION = 2
 	FACTOR_DESENCOLAR     = 4
 	PANIC_COLA_VACIA      = "La cola esta vacia"
+	INICIO_DEL_ARREGLO    = 0
+	COMPARADOR            = 0
 )
 
 type fcmpHeap[T comparable] func(T, T) int
@@ -23,19 +25,19 @@ func CrearHeapArr[T comparable](arreglo []T, funcion_cmp func(T, T) int) ColaPri
 	heap := new(heap[T])
 	heap.cantidad = len(arreglo)
 	heap.cmp = funcion_cmp
-	heap.datos = *heapify(&arreglo, heap.cantidad, heap.cmp)
+	heapify(&arreglo, heap.cantidad, heap.cmp)
+	heap.datos = arreglo
 	return heap
 }
 
-func heapify[T comparable](arr *[]T, tam int, cmp fcmpHeap[T]) *[]T {
-	for i_elemento := tam - 1; i_elemento > -1; i_elemento-- {
+func heapify[T comparable](arr *[]T, tam int, cmp fcmpHeap[T]) {
+	for i_elemento := tam - 1; i_elemento >= INICIO_DEL_ARREGLO; i_elemento-- {
 		downheap(arr, i_elemento, tam, cmp)
 	}
-	return arr
 }
 
 func HeapSort[T comparable](elementos []T, funcion_cmp func(T, T) int) {
-	elementos = *heapify(&elementos, len(elementos), funcion_cmp)
+	heapify(&elementos, len(elementos), funcion_cmp)
 	heapSort(elementos, len(elementos), funcion_cmp)
 }
 
@@ -43,18 +45,19 @@ func heapSort[T comparable](elementos []T, tam int, funcion_cmp func(T, T) int) 
 	if tam == 0 {
 		return
 	}
-	swap(&elementos[0], &elementos[tam-1])
-	downheap(&elementos, 0, tam-1, funcion_cmp)
-	heapSort(elementos, tam-1, funcion_cmp)
+	fin_del_arreglo := tam - 1
+	swap(&elementos[INICIO_DEL_ARREGLO], &elementos[fin_del_arreglo])
+	downheap(&elementos, INICIO_DEL_ARREGLO, fin_del_arreglo, funcion_cmp)
+	heapSort(elementos, fin_del_arreglo, funcion_cmp)
 }
 
 func (heap heap[T]) EstaVacia() bool {
-	return heap.cantidad == 0
+	return heap.cantidad == COMPARADOR
 }
 
 func (heap heap[T]) VerMax() T {
 	heap.comprobarEstaVacia()
-	return heap.datos[0]
+	return heap.datos[INICIO_DEL_ARREGLO]
 }
 
 func (heap heap[T]) Cantidad() int {
@@ -62,24 +65,18 @@ func (heap heap[T]) Cantidad() int {
 }
 
 func upheap[T comparable](arr *[]T, i_elemento int, cmp fcmpHeap[T]) {
-	if i_elemento == 0 {
+	if i_elemento == INICIO_DEL_ARREGLO {
 		return
 	}
 	i_padre := (i_elemento - 1) / 2
-	if cmp((*arr)[i_padre], (*arr)[i_elemento]) < 0 {
+	if cmp((*arr)[i_padre], (*arr)[i_elemento]) < COMPARADOR {
 		swap(&(*arr)[i_elemento], &(*arr)[i_padre])
 		upheap(arr, i_padre, cmp)
 	}
 }
 
 func obtenerIndHijoMayor[T comparable](arr *[]T, i_h_izq, i_h_der int, tam int, cmp fcmpHeap[T]) int {
-	if i_h_izq >= tam {
-		return i_h_der
-	}
-	if i_h_der >= tam {
-		return i_h_izq
-	}
-	if cmp((*arr)[i_h_izq], (*arr)[i_h_der]) > 0 {
+	if i_h_der >= tam || cmp((*arr)[i_h_izq], (*arr)[i_h_der]) > COMPARADOR {
 		return i_h_izq
 	}
 	return i_h_der
@@ -99,7 +96,7 @@ func downheap[T comparable](arr *[]T, i_elemento int, tam int, cmp fcmpHeap[T]) 
 		return
 	}
 	i_h_mayor := obtenerIndHijoMayor(arr, i_h_izq, i_h_der, tam, cmp)
-	if cmp((*arr)[i_elemento], (*arr)[i_h_mayor]) < 0 {
+	if cmp((*arr)[i_elemento], (*arr)[i_h_mayor]) < COMPARADOR {
 		swap(&(*arr)[i_elemento], &(*arr)[i_h_mayor])
 		downheap(arr, i_h_mayor, tam, cmp)
 	}
@@ -123,10 +120,11 @@ func (heap *heap[T]) Encolar(dato T) {
 
 func (heap *heap[T]) Desencolar() T {
 	heap.comprobarEstaVacia()
-	elemento := heap.datos[0]
-	swap(&heap.datos[0], &heap.datos[heap.cantidad-1])
+	elemento := heap.datos[INICIO_DEL_ARREGLO]
+	fin_del_arreglo := heap.cantidad - 1
+	swap(&heap.datos[INICIO_DEL_ARREGLO], &heap.datos[fin_del_arreglo])
 	heap.cantidad--
-	downheap(&heap.datos, 0, heap.cantidad, heap.cmp)
+	downheap(&heap.datos, INICIO_DEL_ARREGLO, heap.cantidad, heap.cmp)
 
 	nuevaCap := cap(heap.datos) / FACTOR_DE_REDIMENSION
 	if heap.cantidad*FACTOR_DESENCOLAR <= cap(heap.datos) {
