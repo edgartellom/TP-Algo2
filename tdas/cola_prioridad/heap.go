@@ -22,22 +22,20 @@ func CrearHeap[T comparable](funcion_cmp func(T, T) int) ColaPrioridad[T] {
 }
 
 func CrearHeapArr[T comparable](arreglo []T, funcion_cmp func(T, T) int) ColaPrioridad[T] {
-	heap := new(heap[T])
-	heap.cantidad = len(arreglo)
-	heap.cmp = funcion_cmp
-	heapify(&arreglo, heap.cantidad, heap.cmp)
-	heap.datos = arreglo
-	return heap
+	arr := make([]T, len(arreglo))
+	copy(arr, arreglo)
+	heapify(arr, len(arr), funcion_cmp)
+	return &heap[T]{datos: arr, cantidad: len(arr), cmp: funcion_cmp}
 }
 
-func heapify[T comparable](arr *[]T, tam int, cmp fcmpHeap[T]) {
+func heapify[T comparable](arr []T, tam int, cmp fcmpHeap[T]) {
 	for posElemento := tam - 1; posElemento >= INICIO_DEL_ARREGLO; posElemento-- {
-		downheap(arr, posElemento, tam, cmp)
+		downheap(&arr, posElemento, tam, cmp)
 	}
 }
 
 func HeapSort[T comparable](elementos []T, funcion_cmp func(T, T) int) {
-	heapify(&elementos, len(elementos), funcion_cmp)
+	heapify(elementos, len(elementos), funcion_cmp)
 	heapSort(elementos, len(elementos), funcion_cmp)
 }
 
@@ -109,8 +107,12 @@ func (heap *heap[T]) redimensionarHeap(nuevaCap int) {
 }
 
 func (heap *heap[T]) Encolar(dato T) {
+	nuevaCap := cap(heap.datos) * FACTOR_DE_REDIMENSION
+	if cap(heap.datos) < LARGO_INICIAL {
+		nuevaCap = LARGO_INICIAL
+	}
 	if heap.cantidad == cap(heap.datos) {
-		heap.redimensionarHeap(cap(heap.datos) * FACTOR_DE_REDIMENSION)
+		heap.redimensionarHeap(nuevaCap)
 	}
 
 	heap.datos[heap.cantidad] = dato
@@ -127,10 +129,10 @@ func (heap *heap[T]) Desencolar() T {
 	downheap(&heap.datos, INICIO_DEL_ARREGLO, heap.cantidad, heap.cmp)
 
 	nuevaCap := cap(heap.datos) / FACTOR_DE_REDIMENSION
-	if heap.cantidad*FACTOR_DESENCOLAR <= cap(heap.datos) {
-		if nuevaCap < LARGO_INICIAL {
-			nuevaCap = LARGO_INICIAL
-		}
+	if cap(heap.datos) < LARGO_INICIAL {
+		nuevaCap = LARGO_INICIAL
+	}
+	if heap.cantidad*FACTOR_DESENCOLAR <= cap(heap.datos) && nuevaCap >= LARGO_INICIAL {
 		heap.redimensionarHeap(nuevaCap)
 	}
 	return elemento

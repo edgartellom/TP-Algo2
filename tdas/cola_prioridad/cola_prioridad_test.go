@@ -12,6 +12,8 @@ import (
 
 var TAM_VOLUMEN = []int{12500, 25000, 50000, 100000, 200000, 400000}
 
+var ARR_VACIO []int
+
 var ARREGLO_PRUEBAS_INT = []int{6, 4, 2, 6, 5, 1, 0, 9}
 
 var ARREGLO_PRUEBAS_STR = []string{"Gatito", "Perro", "Loro", "Sapo", "Raton", "Leon", "Vaca", "Burro"}
@@ -112,6 +114,18 @@ func TestConStrings(t *testing.T) {
 	require.EqualValues(t, "Leon", heap.Desencolar())
 	require.EqualValues(t, "Gatito", heap.Desencolar())
 	require.EqualValues(t, "Burro", heap.Desencolar())
+}
+
+func TestHeapifyVacio(t *testing.T) {
+	t.Log("Valida que se cree un heap apartir de un arreglo vacio")
+	heap := TDAHeap.CrearHeapArr(ARR_VACIO, func_cmp_int)
+	require.EqualValues(t, 0, heap.Cantidad())
+	require.True(t, heap.EstaVacia())
+	require.PanicsWithValue(t, "La cola esta vacia", func() { heap.VerMax() })
+	require.PanicsWithValue(t, "La cola esta vacia", func() { heap.Desencolar() })
+	heap.Encolar(ARREGLO_PRUEBAS_INT[0])
+	require.EqualValues(t, 1, heap.Cantidad())
+	require.EqualValues(t, 6, heap.VerMax())
 }
 
 func TestHeapify(t *testing.T) {
