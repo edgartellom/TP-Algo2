@@ -40,13 +40,13 @@ func HeapSort[T comparable](elementos []T, funcion_cmp func(T, T) int) {
 }
 
 func heapSort[T comparable](elementos []T, tam int, funcion_cmp func(T, T) int) {
-	if tam == 0 {
+	if tam == COMPARADOR {
 		return
 	}
-	fin_del_arreglo := tam - 1
-	swap(&elementos[INICIO_DEL_ARREGLO], &elementos[fin_del_arreglo])
-	downheap(&elementos, INICIO_DEL_ARREGLO, fin_del_arreglo, funcion_cmp)
-	heapSort(elementos, fin_del_arreglo, funcion_cmp)
+	finDelArreglo := tam - 1
+	swap(&elementos[INICIO_DEL_ARREGLO], &elementos[finDelArreglo])
+	downheap(&elementos, INICIO_DEL_ARREGLO, finDelArreglo, funcion_cmp)
+	heapSort(elementos, finDelArreglo, funcion_cmp)
 }
 
 func (heap heap[T]) EstaVacia() bool {
@@ -129,7 +129,7 @@ func (heap *heap[T]) Desencolar() T {
 	downheap(&heap.datos, INICIO_DEL_ARREGLO, heap.cantidad, heap.cmp)
 
 	nuevaCap := cap(heap.datos) / FACTOR_DE_REDIMENSION
-	if cap(heap.datos) < LARGO_INICIAL {
+	if nuevaCap < LARGO_INICIAL && cap(heap.datos) != LARGO_INICIAL {
 		nuevaCap = LARGO_INICIAL
 	}
 	if heap.cantidad*FACTOR_DESENCOLAR <= cap(heap.datos) && nuevaCap >= LARGO_INICIAL {
