@@ -12,8 +12,8 @@ const (
 	FACTOR_REDIMENSION = 2
 	FACTOR_AGRANDAR    = 0.7
 	FACTOR_ACHICAR     = 0.2
-	PANIC_NO_PERTENECE = "La clave no pertenece al diccionario"
-	PANIC_ITERADOR     = "El iterador termino de iterar"
+	// PANIC_NO_PERTENECE = "La clave no pertenece al diccionario"
+	// PANIC_ITERADOR     = "El iterador termino de iterar"
 )
 
 const (
