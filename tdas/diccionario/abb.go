@@ -218,7 +218,7 @@ func (abb *abb[K, V]) Cantidad() int {
 }
 
 func (abb *abb[K, V]) Iterar(visitar func(clave K, dato V) bool) {
-	abb.raiz.iterar(nil, nil, visitar, nil)
+	abb.IterarRango(nil, nil, visitar)
 }
 
 func (abb *abb[K, V]) IterarRango(desde *K, hasta *K, visitar func(clave K, dato V) bool) {
@@ -226,10 +226,7 @@ func (abb *abb[K, V]) IterarRango(desde *K, hasta *K, visitar func(clave K, dato
 }
 
 func (abb *abb[K, V]) Iterador() IterDiccionario[K, V] {
-	iter := new(iterAbb[K, V])
-	iter.abb = abb
-	iter.pila = TDAPila.CrearPilaDinamica[*nodoAbb[K, V]]()
-	iter.apilarNodos(abb.raiz)
+	iter := abb.IteradorRango(nil, nil)
 	return iter
 }
 
