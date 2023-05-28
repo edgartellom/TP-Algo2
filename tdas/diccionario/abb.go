@@ -77,26 +77,34 @@ func (abb *abb[K, V]) obtenerReemplazante(nodo *nodoAbb[K, V]) K {
 	return abb.obtenerReemplazante(nodo.derecho)
 }
 
-func (nodo *nodoAbb[K, V]) iterar(desde, hasta *K, visitar func(clave K, dato V) bool, cmp funcCmp[K]) {
+func (nodo *nodoAbb[K, V]) iterar(desde, hasta *K, visitar func(clave K, dato V) bool, cmp funcCmp[K]) bool {
+	var condicionDeCorte bool
 	if nodo == nil {
-		return
-	}
-	nodo.izquierdo.iterar(desde, hasta, visitar, cmp)
-
-	if nodo.comprobarRango(desde, hasta, cmp) && !visitar(nodo.clave, nodo.dato) {
-		return
+		return condicionDeCorte
 	}
 
-	nodo.derecho.iterar(desde, hasta, visitar, cmp)
+	if !condicionDeCorte && nodo.comprobarDesde(desde, cmp) {
+		condicionDeCorte = nodo.izquierdo.iterar(desde, hasta, visitar, cmp)
+	}
+	if !condicionDeCorte && nodo.comprobarEnRango(desde, hasta, cmp) {
+		condicionDeCorte = !visitar(nodo.clave, nodo.dato)
+	}
+	if !condicionDeCorte && nodo.comprobarHasta(hasta, cmp) {
+		condicionDeCorte = nodo.derecho.iterar(desde, hasta, visitar, cmp)
+	}
+	return condicionDeCorte
 }
 
-func (nodo *nodoAbb[K, V]) comprobarRango(desde, hasta *K, cmp funcCmp[K]) bool {
-	sinRango := desde == nil && hasta == nil
-	sinDesde := (desde == nil && hasta != nil) && cmp(nodo.clave, *hasta) <= COMPARADOR
-	sinHasta := (desde != nil && hasta == nil) && cmp(nodo.clave, *desde) >= COMPARADOR
-	conRango := (desde != nil && hasta != nil) && cmp(nodo.clave, *desde) >= COMPARADOR && cmp(nodo.clave, *hasta) <= COMPARADOR
+func (nodo *nodoAbb[K, V]) comprobarDesde(desde *K, cmp funcCmp[K]) bool {
+	return ((desde == nil) || (desde != nil && cmp(nodo.clave, *desde) >= 0))
+}
 
-	return sinRango || sinDesde || sinHasta || conRango
+func (nodo *nodoAbb[K, V]) comprobarHasta(hasta *K, cmp funcCmp[K]) bool {
+	return ((hasta == nil) || (hasta != nil && cmp(nodo.clave, *hasta) <= 0))
+}
+
+func (nodo *nodoAbb[K, V]) comprobarEnRango(desde, hasta *K, cmp funcCmp[K]) bool {
+	return nodo.comprobarDesde(desde, cmp) && nodo.comprobarHasta(hasta, cmp)
 }
 
 func (iter *iterAbb[K, V]) apilarNodos(nodo *nodoAbb[K, V]) {
