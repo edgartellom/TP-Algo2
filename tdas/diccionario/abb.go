@@ -49,6 +49,7 @@ func CrearABB[K comparable, V any](funcion_cmp func(K, K) int) DiccionarioOrdena
 
 /* ------------------------------------------ FUNCIONES AUXILIARES ------------------------------------------ */
 
+/* ------------------------------------------------- VIEJO ------------------------------------------------- */
 func (abb *abb[K, V]) obtenerPadreEHijo(padre, hijo *nodoAbb[K, V], clave K) (*nodoAbb[K, V], *nodoAbb[K, V]) {
 	if hijo == nil {
 		return padre, hijo
@@ -60,6 +61,20 @@ func (abb *abb[K, V]) obtenerPadreEHijo(padre, hijo *nodoAbb[K, V], clave K) (*n
 		return abb.obtenerPadreEHijo(hijo, hijo.derecho, clave)
 	}
 	return padre, hijo
+}
+
+/* ------------------------------------------------- NUEVO ------------------------------------------------- */
+func (abb *abb[K, V]) obtenerFlechita(flechita **nodoAbb[K, V], clave K) **nodoAbb[K, V] {
+	if (*flechita) == nil {
+		return flechita
+	}
+	if abb.cmp(clave, (*flechita).clave) < COMPARADOR {
+		return abb.obtenerFlechita(&(*flechita).izquierdo, clave)
+	}
+	if abb.cmp(clave, (*flechita).clave) > COMPARADOR {
+		return abb.obtenerFlechita(&(*flechita).derecho, clave)
+	}
+	return flechita
 }
 
 func (abb *abb[K, V]) agregarHijo(nodo *nodoAbb[K, V], clave K, dato V) {
@@ -171,45 +186,94 @@ func (abb *abb[K, V]) borrar2Hijos(padre, hijo *nodoAbb[K, V], clave K) {
 /* ------------------------------------------ PRIMITIVAS ------------------------------------------ */
 
 func (abb *abb[K, V]) Guardar(clave K, dato V) {
-	padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	if hijo != nil {
-		hijo.dato = dato
+	/* ------------------------------- NUEVO ------------------------------- */
+	flechita := abb.obtenerFlechita(&abb.raiz, clave)
+	actual := *flechita
+	if actual != nil {
+		actual.dato = dato
 	} else {
-		if padre == nil {
-			abb.raiz = crearNodoAbb(clave, dato)
-		} else {
-			abb.agregarHijo(padre, clave, dato)
-		}
+		(*flechita) = crearNodoAbb(clave, dato)
 		abb.cantidad++
 	}
+
+	/* ------------------------------- VIEJO ------------------------------- */
+	// padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	// if hijo != nil {
+	// 	hijo.dato = dato
+	// } else {
+	// 	if padre == nil {
+	// 		abb.raiz = crearNodoAbb(clave, dato)
+	// 	} else {
+	// 		abb.agregarHijo(padre, clave, dato)
+	// 	}
+	// 	abb.cantidad++
+	// }
 }
 
 func (abb *abb[K, V]) Pertenece(clave K) bool {
-	_, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	return hijo != nil
+	/* ------------------------------- NUEVO ------------------------------- */
+	flechita := abb.obtenerFlechita(&abb.raiz, clave)
+	actual := *flechita
+	return actual != nil
+
+	/* ------------------------------- VIEJO ------------------------------- */
+	// _, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	// return hijo != nil
 }
 
 func (abb *abb[K, V]) Obtener(clave K) V {
-	_, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	abb.comprobarExiste(hijo)
-	return hijo.dato
+	/* ------------------------------- NUEVO ------------------------------- */
+	flechita := abb.obtenerFlechita(&abb.raiz, clave)
+	actual := *flechita
+	abb.comprobarExiste(actual)
+	return actual.dato
+
+	/* ------------------------------- VIEJO ------------------------------- */
+	// _, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	// abb.comprobarExiste(hijo)
+	// return hijo.dato
 }
 
 func (abb *abb[K, V]) Borrar(clave K) V {
-	padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	abb.comprobarExiste(hijo)
-	datoBorrado := (*hijo).dato
+	/* ------------------------------- NUEVO ------------------------------- */
+	flechita := abb.obtenerFlechita(&abb.raiz, clave)
+	actual := *flechita
+	abb.comprobarExiste(actual)
+	datoBorrado := (*actual).dato
 
-	if hijo.izquierdo == nil && hijo.derecho == nil {
-		abb.borrar0Hijos(padre, clave)
+	if actual.izquierdo == nil && actual.derecho == nil {
+		*flechita = nil
 		abb.cantidad--
-	} else if (hijo.izquierdo != nil && hijo.derecho == nil) || (hijo.izquierdo == nil && hijo.derecho != nil) {
-		abb.borrar1Hijo(padre, hijo, clave)
+	} else if (actual.izquierdo != nil && actual.derecho == nil) || (actual.izquierdo == nil && actual.derecho != nil) {
+		if actual.izquierdo != nil {
+			(*flechita) = actual.izquierdo
+		} else {
+			(*flechita) = actual.derecho
+		}
 		abb.cantidad--
 	} else {
-		abb.borrar2Hijos(padre, hijo, clave)
+		claveReemplazante := abb.obtenerReemplazante(actual.izquierdo)
+		valorReemplazante := abb.Borrar(claveReemplazante)
+		(*flechita).clave = claveReemplazante
+		(*flechita).dato = valorReemplazante
 	}
 	return datoBorrado
+
+	/* ------------------------------- VIEJO ------------------------------- */
+	// padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
+	// abb.comprobarExiste(hijo)
+	// datoBorrado := (*hijo).dato
+
+	// if hijo.izquierdo == nil && hijo.derecho == nil {
+	// 	abb.borrar0Hijos(padre, clave)
+	// 	abb.cantidad--
+	// } else if (hijo.izquierdo != nil && hijo.derecho == nil) || (hijo.izquierdo == nil && hijo.derecho != nil) {
+	// 	abb.borrar1Hijo(padre, hijo, clave)
+	// 	abb.cantidad--
+	// } else {
+	// 	abb.borrar2Hijos(padre, hijo, clave)
+	// }
+	// return datoBorrado
 }
 
 func (abb *abb[K, V]) Cantidad() int {
