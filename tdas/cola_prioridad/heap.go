@@ -17,6 +17,8 @@ type heap[T comparable] struct {
 	cmp      fcmpHeap[T]
 }
 
+/* ----------------------------------- FUNCIONES DE CREACION ----------------------------------- */
+
 func CrearHeap[T comparable](funcion_cmp func(T, T) int) ColaPrioridad[T] {
 	return &heap[T]{datos: make([]T, LARGO_INICIAL), cmp: funcion_cmp}
 }
@@ -28,38 +30,17 @@ func CrearHeapArr[T comparable](arreglo []T, funcion_cmp func(T, T) int) ColaPri
 	return &heap[T]{datos: arr, cantidad: len(arr), cmp: funcion_cmp}
 }
 
-func heapify[T comparable](arr []T, tam int, cmp fcmpHeap[T]) {
-	for posElemento := tam - 1; posElemento >= INICIO_DEL_ARREGLO; posElemento-- {
-		downheap(&arr, posElemento, tam, cmp)
+/* ------------------------------------ FUNCIONES AUXILIARES ----------------------------------- */
+
+func swap[T comparable](elemento1, elemento2 *T) {
+	*elemento1, *elemento2 = *elemento2, *elemento1
+}
+
+func obtenerIndHijoMayor[T comparable](arr *[]T, posHijoIzq, posHijoDer int, tam int, cmp fcmpHeap[T]) int {
+	if posHijoDer >= tam || cmp((*arr)[posHijoIzq], (*arr)[posHijoDer]) > COMPARADOR {
+		return posHijoIzq
 	}
-}
-
-func HeapSort[T comparable](elementos []T, funcion_cmp func(T, T) int) {
-	heapify(elementos, len(elementos), funcion_cmp)
-	heapSort(elementos, len(elementos), funcion_cmp)
-}
-
-func heapSort[T comparable](elementos []T, tam int, funcion_cmp func(T, T) int) {
-	if tam == COMPARADOR {
-		return
-	}
-	finDelArreglo := tam - 1
-	swap(&elementos[INICIO_DEL_ARREGLO], &elementos[finDelArreglo])
-	downheap(&elementos, INICIO_DEL_ARREGLO, finDelArreglo, funcion_cmp)
-	heapSort(elementos, finDelArreglo, funcion_cmp)
-}
-
-func (heap heap[T]) EstaVacia() bool {
-	return heap.cantidad == COMPARADOR
-}
-
-func (heap heap[T]) VerMax() T {
-	heap.comprobarEstaVacia()
-	return heap.datos[INICIO_DEL_ARREGLO]
-}
-
-func (heap heap[T]) Cantidad() int {
-	return heap.cantidad
+	return posHijoDer
 }
 
 func upheap[T comparable](arr *[]T, posElemento int, cmp fcmpHeap[T]) {
@@ -71,17 +52,6 @@ func upheap[T comparable](arr *[]T, posElemento int, cmp fcmpHeap[T]) {
 		swap(&(*arr)[posElemento], &(*arr)[i_padre])
 		upheap(arr, i_padre, cmp)
 	}
-}
-
-func obtenerIndHijoMayor[T comparable](arr *[]T, posHijoIzq, posHijoDer int, tam int, cmp fcmpHeap[T]) int {
-	if posHijoDer >= tam || cmp((*arr)[posHijoIzq], (*arr)[posHijoDer]) > COMPARADOR {
-		return posHijoIzq
-	}
-	return posHijoDer
-}
-
-func swap[T comparable](elemento1, elemento2 *T) {
-	*elemento1, *elemento2 = *elemento2, *elemento1
 }
 
 func downheap[T comparable](arr *[]T, posElemento int, tam int, cmp fcmpHeap[T]) {
@@ -98,6 +68,41 @@ func downheap[T comparable](arr *[]T, posElemento int, tam int, cmp fcmpHeap[T])
 		swap(&(*arr)[posElemento], &(*arr)[posHijoMayor])
 		downheap(arr, posHijoMayor, tam, cmp)
 	}
+}
+
+func heapify[T comparable](arr []T, tam int, cmp fcmpHeap[T]) {
+	for posElemento := tam - 1; posElemento >= INICIO_DEL_ARREGLO; posElemento-- {
+		downheap(&arr, posElemento, tam, cmp)
+	}
+}
+
+/* ----------------------------------- ORDENAMIENTO HEAPSORT ----------------------------------- */
+
+func HeapSort[T comparable](elementos []T, funcion_cmp func(T, T) int) {
+	heapify(elementos, len(elementos), funcion_cmp)
+	heapSort(elementos, len(elementos), funcion_cmp)
+}
+
+func heapSort[T comparable](elementos []T, tam int, funcion_cmp func(T, T) int) {
+	for finDelArreglo := tam - 1; finDelArreglo >= INICIO_DEL_ARREGLO; finDelArreglo-- {
+		swap(&elementos[INICIO_DEL_ARREGLO], &elementos[finDelArreglo])
+		downheap(&elementos, INICIO_DEL_ARREGLO, finDelArreglo, funcion_cmp)
+	}
+}
+
+/* ------------------------------- PRIMITIVAS COLA DE PRIORIDAD -------------------------------- */
+
+func (heap heap[T]) EstaVacia() bool {
+	return heap.cantidad == COMPARADOR
+}
+
+func (heap heap[T]) VerMax() T {
+	heap.comprobarEstaVacia()
+	return heap.datos[INICIO_DEL_ARREGLO]
+}
+
+func (heap heap[T]) Cantidad() int {
+	return heap.cantidad
 }
 
 func (heap *heap[T]) redimensionarHeap(nuevaCap int) {

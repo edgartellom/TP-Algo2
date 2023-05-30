@@ -203,13 +203,12 @@ func (abb *abb[K, V]) Borrar(clave K) V {
 
 	if hijo.izquierdo == nil && hijo.derecho == nil {
 		abb.borrar0Hijos(padre, clave)
-		abb.cantidad--
 	} else if (hijo.izquierdo != nil && hijo.derecho == nil) || (hijo.izquierdo == nil && hijo.derecho != nil) {
 		abb.borrar1Hijo(padre, hijo, clave)
-		abb.cantidad--
 	} else {
 		abb.borrar2Hijos(padre, hijo, clave)
 	}
+	abb.cantidad--
 	return datoBorrado
 }
 
@@ -226,8 +225,7 @@ func (abb *abb[K, V]) IterarRango(desde *K, hasta *K, visitar func(clave K, dato
 }
 
 func (abb *abb[K, V]) Iterador() IterDiccionario[K, V] {
-	iter := abb.IteradorRango(nil, nil)
-	return iter
+	return abb.IteradorRango(nil, nil)
 }
 
 func (abb *abb[K, V]) IteradorRango(desde *K, hasta *K) IterDiccionario[K, V] {
