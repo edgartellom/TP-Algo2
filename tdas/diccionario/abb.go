@@ -5,9 +5,10 @@ import (
 )
 
 const (
-	PANIC_NO_PERTENECE = "La clave no pertenece al diccionario"
-	PANIC_ITERADOR     = "El iterador termino de iterar"
-	COMPARADOR         = 0
+	PANIC_NO_PERTENECE    = "La clave no pertenece al diccionario"
+	PANIC_ITERADOR        = "El iterador termino de iterar"
+	COMPARADOR            = 0
+	MAXIMA_CANTIDAD_HIJOS = 2
 )
 
 type funcCmp[K comparable] func(K, K) int
@@ -35,39 +36,27 @@ type iterAbb[K comparable, V any] struct {
 /* ------------------------------------------ FUNCIONES DE CREACION ------------------------------------------ */
 
 func crearNodoAbb[K comparable, V any](clave K, dato V) *nodoAbb[K, V] {
-	nodo := new(nodoAbb[K, V])
-	nodo.clave = clave
-	nodo.dato = dato
-	return nodo
+	return &nodoAbb[K, V]{clave: clave, dato: dato}
 }
 
 func CrearABB[K comparable, V any](funcion_cmp func(K, K) int) DiccionarioOrdenado[K, V] {
-	abb := new(abb[K, V])
-	abb.cmp = funcion_cmp
-	return abb
+	return &abb[K, V]{cmp: funcion_cmp}
 }
 
 /* ------------------------------------------ FUNCIONES AUXILIARES ------------------------------------------ */
 
-func (abb *abb[K, V]) obtenerPadreEHijo(padre, hijo *nodoAbb[K, V], clave K) (*nodoAbb[K, V], *nodoAbb[K, V]) {
-	if hijo == nil {
-		return padre, hijo
+func (abb *abb[K, V]) obtenerVinculo(vinculo **nodoAbb[K, V], clave K) **nodoAbb[K, V] {
+	actual := *vinculo
+	if actual == nil {
+		return vinculo
 	}
-	if abb.cmp(clave, hijo.clave) < COMPARADOR {
-		return abb.obtenerPadreEHijo(hijo, hijo.izquierdo, clave)
+	if abb.cmp(clave, (actual).clave) < COMPARADOR {
+		return abb.obtenerVinculo(&(actual).izquierdo, clave)
 	}
-	if abb.cmp(clave, hijo.clave) > COMPARADOR {
-		return abb.obtenerPadreEHijo(hijo, hijo.derecho, clave)
+	if abb.cmp(clave, (actual).clave) > COMPARADOR {
+		return abb.obtenerVinculo(&(actual).derecho, clave)
 	}
-	return padre, hijo
-}
-
-func (abb *abb[K, V]) agregarHijo(nodo *nodoAbb[K, V], clave K, dato V) {
-	if abb.cmp(clave, nodo.clave) < COMPARADOR {
-		nodo.izquierdo = crearNodoAbb(clave, dato)
-	} else {
-		nodo.derecho = crearNodoAbb(clave, dato)
-	}
+	return vinculo
 }
 
 func (abb *abb[K, V]) obtenerReemplazante(nodo *nodoAbb[K, V]) K {
@@ -119,96 +108,70 @@ func (iter *iterAbb[K, V]) apilarNodos(nodo *nodoAbb[K, V]) {
 	}
 }
 
-func (abb *abb[K, V]) borrar0Hijos(padre *nodoAbb[K, V], clave K) {
-	if padre == nil {
-		abb.raiz = nil
+func (abb *abb[K, V]) borrarCon0o1Hijo(vinculo **nodoAbb[K, V]) {
+	actual := *vinculo
+	cantidadDeHijos := abb.contarHijos(*vinculo)
+	if cantidadDeHijos == COMPARADOR {
+		*vinculo = nil
 	} else {
-		if abb.cmp(clave, padre.clave) < COMPARADOR {
-			padre.izquierdo = nil
+		if actual.izquierdo != nil {
+			*vinculo = actual.izquierdo
 		} else {
-			padre.derecho = nil
+			*vinculo = actual.derecho
 		}
 	}
+	abb.cantidad--
 }
 
-func (abb *abb[K, V]) borrar1Hijo(padre, hijo *nodoAbb[K, V], clave K) {
-	if hijo.izquierdo != nil {
-		if padre == nil {
-			abb.raiz = hijo.izquierdo
-		} else {
-			if abb.cmp(clave, padre.clave) < COMPARADOR {
-				padre.izquierdo = hijo.izquierdo
-			} else {
-				padre.derecho = hijo.izquierdo
-			}
-		}
-	} else {
-		if padre == nil {
-			abb.raiz = hijo.derecho
-		} else {
-			if abb.cmp(clave, padre.clave) < COMPARADOR {
-				padre.izquierdo = hijo.derecho
-			} else {
-				padre.derecho = hijo.derecho
-			}
-		}
+func (abb *abb[K, V]) contarHijos(actual *nodoAbb[K, V]) int {
+	var cantidadDeHijos int
+	if actual.izquierdo != nil {
+		cantidadDeHijos++
 	}
-}
-
-func (abb *abb[K, V]) borrar2Hijos(padre, hijo *nodoAbb[K, V], clave K) {
-	claveDelReemplazante := abb.obtenerReemplazante(hijo.izquierdo)
-	datoDelReemplazante := abb.Borrar(claveDelReemplazante)
-	if padre == nil {
-		abb.raiz.clave, abb.raiz.dato = claveDelReemplazante, datoDelReemplazante
-	} else {
-		if abb.cmp(clave, padre.clave) < COMPARADOR {
-			padre.izquierdo.clave, padre.izquierdo.dato = claveDelReemplazante, datoDelReemplazante
-		} else {
-			padre.derecho.clave, padre.derecho.dato = claveDelReemplazante, datoDelReemplazante
-		}
+	if actual.derecho != nil {
+		cantidadDeHijos++
 	}
+	return cantidadDeHijos
 }
 
 /* ------------------------------------------ PRIMITIVAS ------------------------------------------ */
 
 func (abb *abb[K, V]) Guardar(clave K, dato V) {
-	padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	if hijo != nil {
-		hijo.dato = dato
+	vinculo := abb.obtenerVinculo(&abb.raiz, clave)
+	actual := *vinculo
+	if actual != nil {
+		actual.dato = dato
 	} else {
-		if padre == nil {
-			abb.raiz = crearNodoAbb(clave, dato)
-		} else {
-			abb.agregarHijo(padre, clave, dato)
-		}
+		*vinculo = crearNodoAbb(clave, dato)
 		abb.cantidad++
 	}
 }
 
 func (abb *abb[K, V]) Pertenece(clave K) bool {
-	_, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	return hijo != nil
+	actual := *abb.obtenerVinculo(&abb.raiz, clave)
+	return actual != nil
 }
 
 func (abb *abb[K, V]) Obtener(clave K) V {
-	_, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	abb.comprobarExiste(hijo)
-	return hijo.dato
+	actual := *abb.obtenerVinculo(&abb.raiz, clave)
+	abb.comprobarExiste(actual)
+	return actual.dato
 }
 
 func (abb *abb[K, V]) Borrar(clave K) V {
-	padre, hijo := abb.obtenerPadreEHijo(nil, abb.raiz, clave)
-	abb.comprobarExiste(hijo)
-	datoBorrado := (*hijo).dato
+	vinculo := abb.obtenerVinculo(&abb.raiz, clave)
+	actual := *vinculo
+	abb.comprobarExiste(actual)
+	datoBorrado := actual.dato
 
-	if hijo.izquierdo == nil && hijo.derecho == nil {
-		abb.borrar0Hijos(padre, clave)
-	} else if (hijo.izquierdo != nil && hijo.derecho == nil) || (hijo.izquierdo == nil && hijo.derecho != nil) {
-		abb.borrar1Hijo(padre, hijo, clave)
+	cantidadDeHijos := abb.contarHijos(actual)
+	if cantidadDeHijos < MAXIMA_CANTIDAD_HIJOS {
+		abb.borrarCon0o1Hijo(vinculo)
 	} else {
-		abb.borrar2Hijos(padre, hijo, clave)
+		claveReemplazante := abb.obtenerReemplazante(actual.izquierdo)
+		datoReemplazante := abb.Borrar(claveReemplazante)
+		(*vinculo).clave, (*vinculo).dato = claveReemplazante, datoReemplazante
 	}
-	abb.cantidad--
 	return datoBorrado
 }
 
@@ -229,11 +192,8 @@ func (abb *abb[K, V]) Iterador() IterDiccionario[K, V] {
 }
 
 func (abb *abb[K, V]) IteradorRango(desde *K, hasta *K) IterDiccionario[K, V] {
-	iter := new(iterAbb[K, V])
-	iter.abb = abb
-	iter.pila = TDAPila.CrearPilaDinamica[*nodoAbb[K, V]]()
-	iter.desde = desde
-	iter.hasta = hasta
+	pila := TDAPila.CrearPilaDinamica[*nodoAbb[K, V]]()
+	iter := &iterAbb[K, V]{abb, pila, desde, hasta}
 	iter.apilarNodos(abb.raiz)
 	return iter
 }

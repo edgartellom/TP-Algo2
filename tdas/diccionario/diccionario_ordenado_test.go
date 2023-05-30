@@ -614,12 +614,21 @@ func compararArreglos[T comparable](arr1, arr2 []T) bool {
 	return true
 }
 
+func guardarClavesIntValorIterExterno[K int, V any](dic TDAAbb.DiccionarioOrdenado[K, V], desde *K, hasta *K) (clavesRes []K, valoresRes []V) {
+	var i int
+	for iter := dic.IteradorRango(desde, hasta); iter.HaySiguiente(); iter.Siguiente() {
+		clave, valor := iter.VerActual()
+		clavesRes = append(clavesRes, clave)
+		valoresRes = append(valoresRes, valor)
+		i++
+	}
+	return clavesRes, valoresRes
+}
+
 func TestIteradorExternoRangosExcedentes(t *testing.T) {
 	dic := TDAAbb.CrearABB[int, string](funcion_cmp_int)
 	cs := []int{6, 1, 15, 10, 16, 4, 8, 13, 11, 14}
 	vs := []string{"c", "a", "i", "e", "j", "b", "d", "g", "f", "h"}
-	newCsE := make([]int, len(cs))
-	newVsE := make([]string, len(vs))
 
 	for i := 0; i < len(cs); i++ {
 		dic.Guardar(cs[i], vs[i])
@@ -628,14 +637,7 @@ func TestIteradorExternoRangosExcedentes(t *testing.T) {
 	require.EqualValues(t, len(cs), dic.Cantidad())
 
 	a, b := -9, 99
-	var i int
-	iter := dic.IteradorRango(&a, &b)
-	for ; iter.HaySiguiente(); iter.Siguiente() {
-		clave, valor := iter.VerActual()
-		newCsE[i] = clave
-		newVsE[i] = valor
-		i++
-	}
+	newCsE, newVsE := guardarClavesIntValorIterExterno(dic, &a, &b)
 
 	require.True(t, compararArreglos(CLAVES_ORDENADAS_1, newCsE))
 	require.True(t, compararArreglos(VALORES_ORDENADOS, newVsE))
@@ -645,8 +647,6 @@ func TestIteradorExternoRangosAcotados(t *testing.T) {
 	dic := TDAAbb.CrearABB[int, string](funcion_cmp_int)
 	cs := []int{6, 1, 15, 10, 16, 4, 8, 13, 11, 14}
 	vs := []string{"c", "a", "i", "e", "j", "b", "d", "g", "f", "h"}
-	var newCsE []int
-	var newVsE []string
 
 	for i := 0; i < len(cs); i++ {
 		dic.Guardar(cs[i], vs[i])
@@ -656,140 +656,95 @@ func TestIteradorExternoRangosAcotados(t *testing.T) {
 
 	/* establezco los rangos, uno no incluido en el Abb y el otro incluido */
 	a, b := 7, 13
-	var i int
-	iter := dic.IteradorRango(&a, &b)
-	for ; iter.HaySiguiente(); iter.Siguiente() {
-		clave, valor := iter.VerActual()
-		newCsE = append(newCsE, clave)
-		newVsE = append(newVsE, valor)
-		i++
-	}
+	newCsE, newVsE := guardarClavesIntValorIterExterno(dic, &a, &b)
 
 	require.True(t, compararArreglos(CLAVES_ORDENADAS_1[a/2:b/2+1], newCsE))
 	require.True(t, compararArreglos(VALORES_ORDENADOS[a/2:b/2+1], newVsE))
+}
+
+func guardarClavesIntValorIterInterno[K int, V any](dic TDAAbb.DiccionarioOrdenado[K, V], desde *K, hasta *K, corte *K) (clavesRes []K, valoresRes []V) {
+
+	var i int
+	iPtr := &i
+	dic.IterarRango(desde, hasta, func(c K, v V) bool {
+		if corte != nil && c > *corte {
+			return false
+		}
+		clavesRes = append(clavesRes, c)
+		valoresRes = append(valoresRes, v)
+		*iPtr++
+		return true
+	})
+	return clavesRes, valoresRes
 }
 
 func TestIteradorInternoRangosExcedentesSinCorte(t *testing.T) {
 	dic := TDAAbb.CrearABB[int, string](funcion_cmp_int)
 	claves := []int{6, 1, 20, 10, 24, 4, 8, 13, 11, 16}
 	valores := []string{"c", "a", "i", "e", "j", "b", "d", "g", "f", "h"}
-	clavesResultantes := make([]int, len(claves))
-	valoresResultantes := make([]string, len(valores))
 
 	for i := 0; i < len(claves); i++ {
 		dic.Guardar(claves[i], valores[i])
 	}
 
+	desde, hasta := -9, 99
+	clavesRes, valoresRes := guardarClavesIntValorIterInterno(dic, &desde, &hasta, nil)
+
 	require.EqualValues(t, len(claves), dic.Cantidad())
-
-	a, b := -9, 99
-	var i int
-	iPtr := &i
-	dic.IterarRango(&a, &b, func(c int, v string) bool {
-		clavesResultantes[i] = c
-		valoresResultantes[i] = v
-		*iPtr++
-		return true
-	})
-
-	require.True(t, compararArreglos(CLAVES_ORDENADAS_2, clavesResultantes))
-	require.True(t, compararArreglos(VALORES_ORDENADOS, valoresResultantes))
+	require.True(t, compararArreglos(CLAVES_ORDENADAS_2, clavesRes))
+	require.True(t, compararArreglos(VALORES_ORDENADOS, valoresRes))
 }
 
 func TestIteradorInternoRangosExcedentesConCorte(t *testing.T) {
 	dic := TDAAbb.CrearABB[int, string](funcion_cmp_int)
 	claves := []int{6, 1, 20, 10, 24, 4, 8, 13, 11, 16}
 	valores := []string{"c", "a", "i", "e", "j", "b", "d", "g", "f", "h"}
-	var clavesResultantes []int
-	var valoresResultantes []string
-	condicionDeCorte := len(claves)
 
 	for i := 0; i < len(claves); i++ {
 		dic.Guardar(claves[i], valores[i])
 	}
 
+	desde, hasta := -9, 99
+	condicionDeCorte := len(claves)
+	clavesRes, valoresRes := guardarClavesIntValorIterInterno(dic, &desde, &hasta, &condicionDeCorte)
+
 	require.EqualValues(t, len(claves), dic.Cantidad())
-
-	a, b := -9, 99
-	var i int
-	iPtr := &i
-	dic.IterarRango(&a, &b, func(c int, v string) bool {
-		if c > condicionDeCorte {
-			return false
-		}
-		clavesResultantes = append(clavesResultantes, c)
-		valoresResultantes = append(valoresResultantes, v)
-		*iPtr++
-		return true
-	})
-
-	require.True(t, compararArreglos(CLAVES_ORDENADAS_2[:len(claves)/2], clavesResultantes))
-	require.True(t, compararArreglos(VALORES_ORDENADOS[:len(valores)/2], valoresResultantes))
+	require.True(t, compararArreglos(CLAVES_ORDENADAS_2[:len(claves)/2], clavesRes))
+	require.True(t, compararArreglos(VALORES_ORDENADOS[:len(valores)/2], valoresRes))
 }
 
 func TestIteradorInternoRangosAcotados(t *testing.T) {
 	dic := TDAAbb.CrearABB[int, string](funcion_cmp_int)
 	claves := []int{6, 1, 20, 10, 24, 4, 8, 13, 11, 16}
 	valores := []string{"c", "a", "i", "e", "j", "b", "d", "g", "f", "h"}
-	var clavesResultantes []int
-	var valoresResultantes []string
-	condicionDeCorte := len(claves)
 
 	for i := 0; i < len(claves); i++ {
 		dic.Guardar(claves[i], valores[i])
 	}
 
+	desde, hasta := 8, 16
+	condicionDeCorte := len(claves)
+	clavesRes, valoresRes := guardarClavesIntValorIterInterno(dic, &desde, &hasta, &condicionDeCorte)
+
 	require.EqualValues(t, len(claves), dic.Cantidad())
-
-	a, b := 8, 16
-	var i int
-	iPtr := &i
-	dic.IterarRango(&a, &b, func(c int, v string) bool {
-		if c > condicionDeCorte {
-			return false
-		}
-		clavesResultantes = append(clavesResultantes, c)
-		valoresResultantes = append(valoresResultantes, v)
-		*iPtr++
-		return true
-	})
-
-	require.True(t, compararArreglos(CLAVES_ORDENADAS_2[len(claves)/3:len(claves)/2], clavesResultantes))
-	require.True(t, compararArreglos(VALORES_ORDENADOS[len(valores)/3:len(valores)/2], valoresResultantes))
+	require.True(t, compararArreglos(CLAVES_ORDENADAS_2[len(claves)/3:len(claves)/2], clavesRes))
+	require.True(t, compararArreglos(VALORES_ORDENADOS[len(valores)/3:len(valores)/2], valoresRes))
 }
 
 func TestAmbosIteradoresInorder(t *testing.T) {
 	dic := TDAAbb.CrearABB[int, string](funcion_cmp_int)
 	claves := []int{6, 1, 20, 10, 24, 4, 8, 13, 11, 16}
 	valores := []string{"c", "a", "i", "e", "j", "b", "d", "g", "f", "h"}
-	clavesIterExterno := make([]int, len(claves))
-	valoresIterExterno := make([]string, len(valores))
-	clavesIterInterno := make([]int, len(claves))
-	valoresIterInterno := make([]string, len(valores))
 
 	for i := 0; i < len(claves); i++ {
 		dic.Guardar(claves[i], valores[i])
 	}
 
+	clavesIterInterno, valoresIterInterno := guardarClavesIntValorIterInterno(dic, nil, nil, nil)
+
+	clavesIterExterno, valoresIterExterno := guardarClavesIntValorIterExterno(dic, nil, nil)
+
 	require.EqualValues(t, 10, dic.Cantidad())
-
-	var i int
-	for iter := dic.Iterador(); iter.HaySiguiente(); iter.Siguiente() {
-		clave, valor := iter.VerActual()
-		clavesIterExterno[i] = clave
-		valoresIterExterno[i] = valor
-		i++
-	}
-
-	var j int
-	jPtr := &j
-	dic.Iterar(func(c int, v string) bool {
-		clavesIterInterno[j] = c
-		valoresIterInterno[j] = v
-		*jPtr++
-		return true
-	})
-
 	require.True(t, compararArreglos(CLAVES_ORDENADAS_2, clavesIterExterno))
 	require.True(t, compararArreglos(VALORES_ORDENADOS, valoresIterExterno))
 
@@ -804,29 +759,16 @@ func TestIteradorInternoRangosConCorte(t *testing.T) {
 	dic := TDAAbb.CrearABB[int, string](funcion_cmp_int)
 	claves := []int{6, 1, 20, 10, 24, 4, 8, 13, 11, 16}
 	valores := []string{"c", "a", "i", "e", "j", "b", "d", "g", "f", "h"}
-	var clavesResultantes []int
-	var valoresResultantes []string
-	condicionDeCorte := len(claves)
 
 	for i := 0; i < len(claves); i++ {
 		dic.Guardar(claves[i], valores[i])
 	}
 
-	require.EqualValues(t, len(claves), dic.Cantidad())
+	desde, hasta := 1, 6
+	condicionDeCorte := len(claves)
+	clavesRes, valoresRes := guardarClavesIntValorIterInterno(dic, &desde, &hasta, &condicionDeCorte)
 
-	a, b := 1, 6
-	var i int
-	iPtr := &i
-	dic.IterarRango(&a, &b, func(c int, v string) bool {
-		if c > condicionDeCorte {
-			return false
-		}
-		clavesResultantes = append(clavesResultantes, c)
-		valoresResultantes = append(valoresResultantes, v)
-		*iPtr++
-		return true
-	})
-
-	require.True(t, compararArreglos([]int{1, 4, 6}, clavesResultantes))
-	require.True(t, compararArreglos([]string{"a", "b", "c"}, valoresResultantes))
+	require.EqualValues(t, 10, dic.Cantidad())
+	require.True(t, compararArreglos([]int{1, 4, 6}, clavesRes))
+	require.True(t, compararArreglos([]string{"a", "b", "c"}, valoresRes))
 }
