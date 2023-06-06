@@ -8,6 +8,7 @@ import (
 	e "algueiza/errores"
 	f "algueiza/funciones"
 	"algueiza/vuelos"
+	v "algueiza/vuelos"
 )
 
 type comando int
@@ -50,7 +51,7 @@ func InfoVuelo(codigo string) {
 		f.MostrarError(err)
 		return
 	}
-	mensaje := fmt.Sprintf("%s ", strings.Join(vuelo.Datos, " "))
+	mensaje := fmt.Sprintf("%s ", strings.Join(vuelo[:], " "))
 	f.MostrarSalida(mensaje)
 	f.MostrarSalida(SALIDA_EXITOSA)
 }
@@ -58,7 +59,7 @@ func InfoVuelo(codigo string) {
 func PrioridadVuelos(K int) {
 	vuelos := tablero.ObtenerVuelosPrioritarios(K)
 	for _, vuelo := range vuelos {
-		mensaje := fmt.Sprintf("%d - %s", vuelo.Prioridad, vuelo.Codigo)
+		mensaje := fmt.Sprintf("%s - %s", vuelo[v.PRIORIDAD], vuelo[v.CODIGO])
 		f.MostrarSalida(mensaje)
 	}
 	f.MostrarSalida(SALIDA_EXITOSA)

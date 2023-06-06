@@ -17,14 +17,9 @@ const (
 	CANCELADO
 )
 
-type Vuelo struct {
-	Codigo    string
-	Prioridad int
-	Origen    string
-	Destino   string
-	Fecha     string
-	Datos     []string
-}
+const CANT_DATOS = CANCELADO + 1
+
+type Vuelo [CANT_DATOS]string
 
 type Tablero interface {
 	ObtenerVuelos(K int, modo string, desde, hasta *Vuelo) ([]Vuelo, error)

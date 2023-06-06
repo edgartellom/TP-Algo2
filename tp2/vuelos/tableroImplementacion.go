@@ -21,21 +21,23 @@ type tablero struct {
 }
 
 func cmpPrioridad(a, b *Vuelo) int {
-	if (*a).Prioridad > (*b).Prioridad {
+	prioridad1, _ := strconv.Atoi((*a)[PRIORIDAD])
+	prioridad2, _ := strconv.Atoi((*b)[PRIORIDAD])
+	if prioridad1 > prioridad2 {
 		return 1
 	}
-	if (*a).Prioridad == (*b).Prioridad {
-		return strings.Compare((*b).Codigo, (*a).Codigo)
+	if prioridad1 == prioridad2 {
+		return strings.Compare((*b)[CODIGO], (*a)[CODIGO])
 	}
 	return -1
 }
 
 func cmpTablero(a, b *Vuelo) int {
-	if (*a).Fecha > (*b).Fecha {
+	if (*a)[FECHA] > (*b)[FECHA] {
 		return 1
 	}
-	if (*a).Fecha == (*b).Fecha {
-		return strings.Compare((*a).Codigo, (*b).Codigo)
+	if (*a)[FECHA] == (*b)[FECHA] {
+		return strings.Compare((*b)[CODIGO], (*a)[CODIGO])
 	}
 	return -1
 }
@@ -47,7 +49,7 @@ func CrearTablero() Tablero {
 }
 
 func (tablero *tablero) ObtenerVuelos(K int, modo string, desde, hasta *Vuelo) ([]Vuelo, error) {
-	if K <= 0 || (modo != "asc" && modo != "desc") || hasta.Fecha < desde.Fecha {
+	if K <= 0 || (modo != "asc" && modo != "desc") || (*hasta)[FECHA] < (*desde)[FECHA] {
 		err := e.ErrorComando{}
 		return nil, err
 	}
@@ -93,12 +95,7 @@ func (tablero *tablero) ActualizarTablero(archivo *os.File) {
 	for scanner.Scan() {
 		linea := scanner.Text()
 		infoLinea := f.SepararEntrada(linea, ",")
-		codigo := infoLinea[CODIGO]
-		prioridad, _ := strconv.Atoi(infoLinea[PRIORIDAD])
-		origen := infoLinea[ORIGEN]
-		destino := infoLinea[DESTINO]
-		fecha := infoLinea[FECHA]
-		vuelo := Vuelo{codigo, prioridad, origen, destino, fecha, infoLinea}
+		vuelo := Vuelo{infoLinea[CODIGO], infoLinea[AEROLINEA], infoLinea[ORIGEN], infoLinea[DESTINO], infoLinea[NUM_COLA], infoLinea[PRIORIDAD], infoLinea[FECHA], infoLinea[DEMORA], infoLinea[TIEMPO], infoLinea[CANCELADO]}
 		tablero.guardar(vuelo, vuelo)
 		tablero.vuelos = append(tablero.vuelos, &vuelo)
 	}
@@ -107,11 +104,11 @@ func (tablero *tablero) ActualizarTablero(archivo *os.File) {
 
 func (tablero *tablero) guardar(clave Vuelo, datos Vuelo) {
 	tablero.abb.Guardar(&clave, datos)
-	tablero.hash.Guardar(clave.Codigo, datos)
+	tablero.hash.Guardar(clave[CODIGO], datos)
 }
 
 func (tablero *tablero) Borrar(desde, hasta *Vuelo) ([]Vuelo, error) {
-	if hasta.Fecha < desde.Fecha {
+	if hasta[FECHA] < desde[FECHA] {
 		err := e.ErrorComando{}
 		return nil, err
 	}
@@ -120,10 +117,10 @@ func (tablero *tablero) Borrar(desde, hasta *Vuelo) ([]Vuelo, error) {
 		vuelos = append(vuelos, d)
 		return true
 	})
-	for i, vuelo := range vuelos {
-		tablero.abb.Borrar(&vuelo)
-		tablero.hash.Borrar(vuelo.Codigo)
-		tablero.vuelos = append(tablero.vuelos[:i], tablero.vuelos[i+1:]...)
+	for i := 0; i < len(vuelos); i++ {
+		tablero.abb.Borrar(&vuelos[i])
+		tablero.hash.Borrar(vuelos[i][CODIGO])
+		//COMO ELIMINAR LOS VUELOS DE tablero.vuelos?
 	}
 	return vuelos, nil
 }
