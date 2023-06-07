@@ -5,7 +5,6 @@ import (
 	f "algueiza/funciones"
 	"bufio"
 	"os"
-	"strconv"
 )
 
 type indice int
@@ -29,11 +28,11 @@ func main() {
 		case a.LISTA_COMANDOS[a.AGREGAR_ARCHIVO]:
 			a.AgregarArchivo(entradaSeparada[PARAMETRO_1])
 		case a.LISTA_COMANDOS[a.VER_TABLERO]:
+			a.VerTablero(entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3], entradaSeparada[PARAMETRO_4])
 		case a.LISTA_COMANDOS[a.INFO_VUELO]:
 			a.InfoVuelo(entradaSeparada[PARAMETRO_1])
 		case a.LISTA_COMANDOS[a.PRIORIDAD_VUELOS]:
-			parametro, _ := strconv.Atoi(entradaSeparada[PARAMETRO_1])
-			a.PrioridadVuelos(parametro)
+			a.PrioridadVuelos(entradaSeparada[PARAMETRO_1])
 		case a.LISTA_COMANDOS[a.SIGUIENTE_VUELO]:
 		case a.LISTA_COMANDOS[a.BORRAR]:
 		}
