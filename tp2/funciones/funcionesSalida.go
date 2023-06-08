@@ -13,9 +13,3 @@ func MostrarError(err error) {
 func MostrarSalida(mensaje string) {
 	fmt.Fprintf(os.Stdout, "%s\n", mensaje)
 }
-
-// func MensajeInfoVuelo(vuelo vuelos.Vuelo) string{
-// 	codigo := fmt.Sprintf("%s", vuelo.Codigo)
-// 	aerolinea := fmt.Sprintf("%s", vuelo.Datos.Aerolinea)
-// 	return fmt.Sprintf("%s %s %s %s", partido.nombreDelPartido, partido.votosActuales[tipo], cantidad)
-// }

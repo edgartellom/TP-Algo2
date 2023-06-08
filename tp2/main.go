@@ -34,6 +34,7 @@ func main() {
 		case a.LISTA_COMANDOS[a.PRIORIDAD_VUELOS]:
 			a.PrioridadVuelos(entradaSeparada[PARAMETRO_1])
 		case a.LISTA_COMANDOS[a.SIGUIENTE_VUELO]:
+			a.SiguienteVuelo(entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3])
 		case a.LISTA_COMANDOS[a.BORRAR]:
 		}
 	}

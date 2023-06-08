@@ -5,10 +5,8 @@ import "os"
 type Codigo string
 
 type Claves struct {
-	Fecha   string
-	Codigo  Codigo
-	Origen  string
-	Destino string
+	Fecha  string
+	Codigo Codigo
 }
 
 type indice int
@@ -34,7 +32,7 @@ type Tablero interface {
 	ObtenerVuelos(K int, modo string, desde, hasta Claves) ([]Vuelo, error)
 	ObtenerVuelo(codigo Codigo) (Vuelo, error)
 	ObtenerVuelosPrioritarios(K int) []Vuelo
-	SiguienteVuelo(origen, destino, fecha string) (Vuelo, error)
+	SiguienteVuelo(origen, destino string, fecha Claves) (Vuelo, error)
 	ActualizarTablero(archivo *os.File)
-	Borrar(desde, hasta Claves) ([]Vuelo, error)
+	BorrarVuelos(desde, hasta Claves) ([]Vuelo, error)
 }

@@ -92,3 +92,20 @@ func VerTablero(K string, modo string, desde, hasta string) {
 	f.MostrarSalida(SALIDA_EXITOSA)
 
 }
+
+func SiguienteVuelo(origen, destino string, fecha string) {
+	claveFecha := v.Claves{Fecha: fecha}
+	vuelo, panic := tablero.SiguienteVuelo(origen, destino, claveFecha)
+	if panic != nil {
+		f.MostrarSalida(panic.Error())
+		f.MostrarSalida(SALIDA_EXITOSA)
+		return
+	}
+	mensaje := fmt.Sprintf("%s ", strings.Join(vuelo[:], " "))
+	f.MostrarSalida(mensaje)
+	f.MostrarSalida(SALIDA_EXITOSA)
+}
+
+func Borrar(desde, hasta string) {
+
+}
