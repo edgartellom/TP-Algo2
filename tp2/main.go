@@ -2,9 +2,9 @@ package main
 
 import (
 	"algueiza/acciones"
+	"algueiza/funciones"
 	"bufio"
 	"os"
-	"strings"
 )
 
 type indice int
@@ -23,7 +23,7 @@ func main() {
 
 	for s.Scan() {
 		entrada := s.Text()
-		entradaSeparada := strings.Split(entrada, " ")
+		entradaSeparada := funciones.SepararEntrada(entrada, " ")
 		comando := entradaSeparada[COMANDO]
 		switch comando {
 		case "agregar_archivo":
@@ -32,16 +32,12 @@ func main() {
 			acciones.VerTablero(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3], entradaSeparada[PARAMETRO_4])
 		case "info_vuelo":
 			acciones.InfoVuelo(&tablero, entradaSeparada[PARAMETRO_1])
-			// case a.LISTA_COMANDOS[a.AGREGAR_ARCHIVO]:
-			// 	a.AgregarArchivo(entradaSeparada[PARAMETRO_1])
-			// case a.LISTA_COMANDOS[a.VER_TABLERO]:
-			// case a.LISTA_COMANDOS[a.INFO_VUELO]:
-			// 	a.InfoVuelo(entradaSeparada[PARAMETRO_1])
-			// case a.LISTA_COMANDOS[a.PRIORIDAD_VUELOS]:
-			// 	parametro, _ := strconv.Atoi(entradaSeparada[PARAMETRO_1])
-			// 	a.PrioridadVuelos(parametro)
-			// case a.LISTA_COMANDOS[a.SIGUIENTE_VUELO]:
-			// case a.LISTA_COMANDOS[a.BORRAR]:
+		case "prioridad_vuelos":
+			acciones.PrioridadVuelos(&tablero, entradaSeparada[PARAMETRO_1])
+		case "siguiente_vuelo":
+			acciones.ProximoVuelo(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3])
+		case "borrar":
+			acciones.BorrarVuelos(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2])
 		}
 	}
 

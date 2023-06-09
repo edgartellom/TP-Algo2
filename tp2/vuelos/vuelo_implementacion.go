@@ -5,65 +5,31 @@ import (
 	"strings"
 )
 
-type indice int
-
-const (
-	CODIGO indice = iota
-	AEROLINEA
-	ORIGEN
-	DESTINO
-	NUM_COLA
-	PRIORIDAD
-	FECHA
-	DEMORA
-	TIEMPO
-	CANCELADO
-)
-
-type vuelo struct {
-	info Claves
-	// numeroDeVuelo       Clave
-	// origen              Clave
-	// destino             Clave
-	prioridad int
-	// fecha               Clave
-	informacionCompleta string
+func convertirAInt(prioridad, demora, tiempo, cancelado string) (int, int, int, int) {
+	nPrioridad, _ := strconv.Atoi(prioridad)
+	nDemora, _ := strconv.Atoi(demora)
+	nTiempo, _ := strconv.Atoi(tiempo)
+	nCancelado, _ := strconv.Atoi(cancelado)
+	return nPrioridad, nDemora, nTiempo, nCancelado
 }
 
-func CrearInformacionPrincipal(codigo, fecha, origen, destino string) Claves {
-	return Claves{codigo, fecha, origen, destino}
-}
+func CrearVuelo(infoDeVuelo string) Vuelo {
+	informacion := strings.Split(infoDeVuelo, ",")
 
-func CrearVuelo(informacionDeVuelo string) Vuelo {
-	camposDeVuelo := strings.Split(informacionDeVuelo, ",")
-	nPrioridad, _ := strconv.Atoi(camposDeVuelo[PRIORIDAD])
+	prioridad, demora, tiempo, cancelado := convertirAInt(informacion[PRIORIDAD], informacion[DEMORA], informacion[TIEMPO], informacion[CANCELADO])
+	informacion[PRIORIDAD], informacion[DEMORA] = strconv.Itoa(prioridad), strconv.Itoa(demora)
+	informacion[TIEMPO], informacion[CANCELADO] = strconv.Itoa(tiempo), strconv.Itoa(cancelado)
 
-	vuelo := new(vuelo)
-	vuelo.info = CrearInformacionPrincipal(camposDeVuelo[CODIGO], camposDeVuelo[FECHA], camposDeVuelo[ORIGEN], camposDeVuelo[DESTINO])
-	// vuelo.origen, vuelo.destino = camposDeVuelo[ORIGEN], camposDeVuelo[DESTINO]
-	vuelo.informacionCompleta = strings.Join(camposDeVuelo, " ")
-	// vuelo.numeroDeVuelo = camposDeVuelo[CODIGO]
-	// vuelo.fecha = camposDeVuelo[FECHA]
-	vuelo.prioridad = nPrioridad
-	return vuelo
-}
+	campos := CamposComparables{Codigo: Codigo(informacion[CODIGO]), Prioridad: prioridad, Fecha: informacion[FECHA]}
 
-func (vuelo vuelo) VerInformacionPrincipal() Claves {
-	return vuelo.info
-}
-
-func (vuelo vuelo) VerPrioridad() int {
-	return vuelo.prioridad
-}
-
-func (vuelo vuelo) VerCodigo() string {
-	return vuelo.info.codigo
-}
-
-func (vuelo vuelo) VerFecha() string {
-	return vuelo.info.fecha
-}
-
-func (vuelo vuelo) ObtenerInformacionDeVuelo() string {
-	return vuelo.informacionCompleta
+	boleto := Vuelo{
+		InfoComparable:      campos,
+		Origen:              informacion[ORIGEN],
+		Destino:             informacion[DESTINO],
+		DemoraDeDespegue:    demora,
+		TiempoDeVuelo:       tiempo,
+		Cancelacion:         cancelado,
+		InformacionCompleta: strings.Join(informacion, " "),
+	}
+	return boleto
 }
