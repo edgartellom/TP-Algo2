@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	e "algueiza/errores"
 	f "algueiza/funciones"
@@ -53,7 +52,11 @@ func InfoVuelo(codigo string) {
 		f.MostrarError(err)
 		return
 	}
-	mensaje := fmt.Sprintf("%s ", strings.Join(vuelo[:], " "))
+	mensaje := fmt.Sprintf("%s %s %s %s %s %d %s %d %d %d",
+		vuelo.Codigo, vuelo.Aerolinea, vuelo.Origen, vuelo.Destino,
+		vuelo.NumCola, vuelo.Prioridad, vuelo.Fecha, vuelo.Demora,
+		vuelo.Tiempo, vuelo.Cancelado,
+	)
 	f.MostrarSalida(mensaje)
 	f.MostrarSalida(SALIDA_EXITOSA)
 }
@@ -61,14 +64,14 @@ func InfoVuelo(codigo string) {
 func PrioridadVuelos(K string) {
 	cantidad, err := strconv.Atoi(K)
 	comando := LISTA_COMANDOS[PRIORIDAD_VUELOS]
-	if err != nil {
+	if err != nil || cantidad < 1 {
 		err = e.ErrorComando{Comando: comando}
 		f.MostrarError(err)
 		return
 	}
 	vuelos := tablero.ObtenerVuelosPrioritarios(cantidad)
 	for _, vuelo := range vuelos {
-		mensaje := fmt.Sprintf("%s - %s", vuelo[v.PRIORIDAD], vuelo[v.CODIGO])
+		mensaje := fmt.Sprintf("%d - %s", vuelo.Prioridad, vuelo.Codigo)
 		f.MostrarSalida(mensaje)
 	}
 	f.MostrarSalida(SALIDA_EXITOSA)
@@ -86,7 +89,7 @@ func VerTablero(K string, modo string, desde, hasta string) {
 		return
 	}
 	for _, vuelo := range vuelos {
-		mensaje := fmt.Sprintf("%s - %s", vuelo[v.FECHA], vuelo[v.CODIGO])
+		mensaje := fmt.Sprintf("%s - %s", vuelo.Fecha, vuelo.Codigo)
 		f.MostrarSalida(mensaje)
 	}
 	f.MostrarSalida(SALIDA_EXITOSA)
@@ -101,11 +104,33 @@ func SiguienteVuelo(origen, destino string, fecha string) {
 		f.MostrarSalida(SALIDA_EXITOSA)
 		return
 	}
-	mensaje := fmt.Sprintf("%s ", strings.Join(vuelo[:], " "))
+	mensaje := fmt.Sprintf("%s %s %s %s %s %d %s %d %d %d",
+		vuelo.Codigo, vuelo.Aerolinea, vuelo.Origen, vuelo.Destino,
+		vuelo.NumCola, vuelo.Prioridad, vuelo.Fecha, vuelo.Demora,
+		vuelo.Tiempo, vuelo.Cancelado,
+	)
 	f.MostrarSalida(mensaje)
 	f.MostrarSalida(SALIDA_EXITOSA)
 }
 
 func Borrar(desde, hasta string) {
+	claveDesde := v.Claves{Fecha: desde}
+	claveHasta := v.Claves{Fecha: hasta}
+	vuelos, err := tablero.BorrarVuelos(claveDesde, claveHasta)
+	comando := LISTA_COMANDOS[BORRAR]
+	if err != nil {
+		err = e.ErrorComando{Comando: comando}
+		f.MostrarError(err)
+		return
+	}
+	for _, vuelo := range vuelos {
+		mensaje := fmt.Sprintf("%s %s %s %s %s %d %s %d %d %d",
+			vuelo.Codigo, vuelo.Aerolinea, vuelo.Origen, vuelo.Destino,
+			vuelo.NumCola, vuelo.Prioridad, vuelo.Fecha, vuelo.Demora,
+			vuelo.Tiempo, vuelo.Cancelado,
+		)
+		f.MostrarSalida(mensaje)
+	}
+	f.MostrarSalida(SALIDA_EXITOSA)
 
 }
