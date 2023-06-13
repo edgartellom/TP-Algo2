@@ -1,22 +1,24 @@
 package vuelos
 
-import "os"
+import (
+	"os"
+	"time"
+)
 
 type Codigo string
 
 type Claves struct {
-	Fecha  string
 	Codigo Codigo
+	Fecha  time.Time
 }
 
 type Vuelo struct {
-	Codigo    Codigo
+	Claves    Claves
 	Aerolinea string
 	Origen    string
 	Destino   string
 	NumCola   string
 	Prioridad int
-	Fecha     string
 	Demora    int
 	Tiempo    int
 	Cancelado int

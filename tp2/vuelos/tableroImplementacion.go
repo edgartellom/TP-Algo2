@@ -22,22 +22,24 @@ type tablero struct {
 	vuelos          TDADic.Diccionario[Codigo, Vuelo]
 }
 
-func cmpPrioridad(a, b *Vuelo) int {
-	cmp := a.Prioridad - b.Prioridad
+func cmpPrioridad(a, b Vuelo) int {
+	cmp := b.Prioridad - a.Prioridad
 
 	if cmp == COMPARADOR {
-		return strings.Compare(string(b.Codigo), string(a.Codigo))
+		return strings.Compare(string(a.Claves.Codigo), string(b.Claves.Codigo))
 	}
 	return cmp
 }
 
 func cmpOrdenadosAsc(a, b Claves) int {
-	cmp := strings.Compare(a.Fecha, b.Fecha)
-
-	if cmp == COMPARADOR {
-		return strings.Compare(string(a.Codigo), (string(b.Codigo)))
+	if a.Fecha.After(b.Fecha) {
+		return 1
 	}
-	return cmp
+
+	if a.Fecha.Before(b.Fecha) {
+		return -1
+	}
+	return strings.Compare(string(a.Codigo), (string(b.Codigo)))
 }
 
 func cmpOrdenadosDesc(a, b Claves) int {
@@ -53,32 +55,34 @@ func CrearTablero() Tablero {
 
 func (tablero *tablero) ObtenerVuelos(K int, modo string, desde, hasta Claves) ([]Vuelo, error) {
 
-	if K <= 0 || (modo != ASCENDENTE && modo != DESCENDENTE) || hasta.Fecha < desde.Fecha {
+	if K <= 0 || (modo != ASCENDENTE && modo != DESCENDENTE) {
 		err := e.ErrorComando{}
 		return nil, err
 	}
 	var vuelos []Vuelo
 	var contador int
 	contPtr := &contador
-	if modo == ASCENDENTE {
-		tablero.vuelosFechaAsc.IterarRango(&desde, &hasta, func(c Claves, d Vuelo) bool {
-			if *contPtr >= K {
-				return false
-			}
-			vuelos = append(vuelos, d)
-			*contPtr++
-			return true
-		})
+	if !(cmpOrdenadosAsc(hasta, desde) < COMPARADOR) {
+		if modo == ASCENDENTE {
+			tablero.vuelosFechaAsc.IterarRango(&desde, &hasta, func(c Claves, d Vuelo) bool {
+				if *contPtr >= K {
+					return false
+				}
+				vuelos = append(vuelos, d)
+				*contPtr++
+				return true
+			})
 
-	} else {
-		tablero.vuelosFechaDesc.IterarRango(&hasta, &desde, func(c Claves, d Vuelo) bool {
-			if *contPtr >= K {
-				return false
-			}
-			vuelos = append(vuelos, d)
-			*contPtr++
-			return true
-		})
+		} else {
+			tablero.vuelosFechaDesc.IterarRango(&hasta, &desde, func(c Claves, d Vuelo) bool {
+				if *contPtr >= K {
+					return false
+				}
+				vuelos = append(vuelos, d)
+				*contPtr++
+				return true
+			})
+		}
 	}
 	return vuelos, nil
 }
@@ -93,23 +97,25 @@ func (tablero *tablero) ObtenerVuelo(codigo Codigo) (*Vuelo, error) {
 }
 
 func (tablero *tablero) ObtenerVuelosPrioritarios(K int) []Vuelo {
-	heap := TDAHeap.CrearHeap(cmpPrioridad)
-	iter := tablero.vuelos.Iterador()
-	for iter.HaySiguiente() {
+	var vuelosPrioritarios []Vuelo
+	// heap := TDAHeap.CrearHeap(cmpPrioridad)
+	for iter := tablero.vuelos.Iterador(); iter.HaySiguiente(); iter.Siguiente() {
 		_, vuelo := iter.VerActual()
-		heap.Encolar(&vuelo)
-		iter.Siguiente()
+		vuelosPrioritarios = append(vuelosPrioritarios, vuelo)
+		// heap.Encolar(&vuelo)
 	}
-	var vuelos []Vuelo
-	for j := 0; j < K; j++ {
-		vuelos = append(vuelos, *heap.Desencolar())
+	// var vuelos []Vuelo
+	TDAHeap.HeapSort(vuelosPrioritarios, cmpPrioridad)
+	if K < len(vuelosPrioritarios) {
+		return vuelosPrioritarios[:K]
 	}
-	return vuelos
+	return vuelosPrioritarios
 }
 
-func (tablero *tablero) SiguienteVuelo(origen, destino string, fecha Claves) (*Vuelo, error) {
+func (tablero *tablero) SiguienteVuelo(origen, destino string, clavesDesde Claves) (*Vuelo, error) {
 	var vuelo *Vuelo
-	tablero.vuelosFechaAsc.IterarRango(&fecha, nil, func(c Claves, v Vuelo) bool {
+
+	tablero.vuelosFechaAsc.IterarRango(&clavesDesde, nil, func(c Claves, v Vuelo) bool {
 		if v.Origen == origen && v.Destino == destino {
 			vuelo = &v
 			return false
@@ -117,7 +123,8 @@ func (tablero *tablero) SiguienteVuelo(origen, destino string, fecha Claves) (*V
 		return true
 	})
 	if vuelo == nil {
-		err := e.ErrorSiguienteVuelo{Origen: origen, Destino: destino, Fecha: fecha.Fecha}
+		cadenaFecha := f.ConvertirFechaACadena(clavesDesde.Fecha)
+		err := e.ErrorSiguienteVuelo{Origen: origen, Destino: destino, Fecha: cadenaFecha}
 		return nil, err
 	}
 	return vuelo, nil
@@ -128,48 +135,57 @@ func (tablero *tablero) ActualizarTablero(archivo *os.File) {
 	for scanner.Scan() {
 		linea := scanner.Text()
 		infoLinea := f.SepararEntrada(linea, ",")
+		fecha := f.ConvertirCadenaAFecha(infoLinea[FECHA])
+		claves := Claves{Codigo: Codigo(infoLinea[CODIGO]), Fecha: fecha}
 		prioridad, _ := strconv.Atoi(infoLinea[PRIORIDAD])
 		demora, _ := strconv.Atoi(infoLinea[DEMORA])
 		tiempo, _ := strconv.Atoi(infoLinea[TIEMPO])
 		cancelado, _ := strconv.Atoi(infoLinea[CANCELADO])
-		vuelo := Vuelo{Codigo(infoLinea[CODIGO]), infoLinea[AEROLINEA], infoLinea[ORIGEN], infoLinea[DESTINO], infoLinea[NUM_COLA], prioridad, infoLinea[FECHA], demora, tiempo, cancelado}
-		tablero.guardarVuelos(Claves{Fecha: infoLinea[FECHA], Codigo: Codigo(infoLinea[CODIGO])}, vuelo)
+		vuelo := Vuelo{claves, infoLinea[AEROLINEA], infoLinea[ORIGEN], infoLinea[DESTINO],
+			infoLinea[NUM_COLA], prioridad, demora, tiempo, cancelado}
+		tablero.guardarVuelos(Claves{Fecha: fecha, Codigo: Codigo(infoLinea[CODIGO])}, vuelo)
 	}
 
 }
 
-func (tablero *tablero) guardarVuelos(clave Claves, datos Vuelo) {
-	vuelo, _ := tablero.ObtenerVuelo(clave.Codigo)
+func (tablero *tablero) guardarVuelos(claves Claves, datos Vuelo) {
+	vuelo, _ := tablero.ObtenerVuelo(claves.Codigo)
 	if vuelo != nil {
-		claves := Claves{Codigo: vuelo.Codigo, Fecha: vuelo.Fecha}
+		claves := Claves{Codigo: (*vuelo).Claves.Codigo, Fecha: (*vuelo).Claves.Fecha}
 		tablero.vuelosFechaAsc.Borrar(claves)
 		tablero.vuelosFechaDesc.Borrar(claves)
 	}
 
-	tablero.vuelos.Guardar(clave.Codigo, datos)
-	tablero.vuelosFechaAsc.Guardar(clave, datos)
-	tablero.vuelosFechaDesc.Guardar(clave, datos)
+	tablero.vuelos.Guardar(claves.Codigo, datos)
+	tablero.vuelosFechaAsc.Guardar(claves, datos)
+	tablero.vuelosFechaDesc.Guardar(claves, datos)
 }
 
-func (tablero *tablero) BorrarVuelos(desde, hasta Claves) ([]Vuelo, error) {
-	if hasta.Fecha < desde.Fecha {
-		err := e.ErrorComando{}
-		return nil, err
-	}
-	var claves []Claves
+func (tablero *tablero) BorrarVuelos(clavesDesde, clavesHasta Claves) ([]Vuelo, error) {
+	// if clavesHasta.Fecha.Before(clavesDesde.Fecha) {
+	// 	err := e.ErrorComando{}
+	// 	return nil, err
+	// }
+	var conjClaves []Claves
 	var vuelos []Vuelo
-	iter := tablero.vuelosFechaAsc.IteradorRango(&desde, &hasta)
-	for iter.HaySiguiente() {
-		clave, vuelo := iter.VerActual()
-		claves = append(claves, clave)
-		vuelos = append(vuelos, vuelo)
-		iter.Siguiente()
-	}
-
-	for i := 0; i < len(vuelos); i++ {
-		tablero.vuelosFechaAsc.Borrar(claves[i])
-		tablero.vuelosFechaDesc.Borrar(claves[i])
-		tablero.vuelos.Borrar(claves[i].Codigo)
+	if clavesDesde.Fecha.Before(clavesHasta.Fecha) || clavesDesde.Fecha.Equal(clavesHasta.Fecha) {
+		// iter := tablero.vuelosFechaAsc.IteradorRango(&clavesDesde, &clavesHasta)
+		// for iter.HaySiguiente() {
+		// 	clave, vuelo := iter.VerActual()
+		// 	claves = append(claves, clave)
+		// 	vuelos = append(vuelos, vuelo)
+		// 	iter.Siguiente()
+		// }
+		tablero.vuelosFechaAsc.IterarRango(&clavesDesde, &clavesHasta, func(c Claves, v Vuelo) bool {
+			conjClaves = append(conjClaves, c)
+			vuelos = append(vuelos, v)
+			return true
+		})
+		for _, claves := range conjClaves {
+			tablero.vuelosFechaAsc.Borrar(claves)
+			tablero.vuelosFechaDesc.Borrar(claves)
+			tablero.vuelos.Borrar(claves.Codigo)
+		}
 	}
 	return vuelos, nil
 }
