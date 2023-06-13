@@ -6,18 +6,16 @@ type (
 	indice int
 
 	CamposComparables struct {
-		Prioridad int
-		Fecha     string
-		Codigo    Codigo
+		Fecha  string
+		Codigo Codigo
 	}
 
 	Vuelo struct {
 		InfoComparable      CamposComparables
 		Origen              string
 		Destino             string
+		Prioridad           int
 		DemoraDeDespegue    int
-		TiempoDeVuelo       int
-		Cancelacion         int
 		InformacionCompleta string
 	}
 )
@@ -40,7 +38,7 @@ type Tablero interface {
 	Pertenece(string) bool
 	ObtenerVuelo(string) Vuelo
 	ObtenerVuelosPrioritarios(K int) []Vuelo
-	ObtenerVuelosEntreRango(int, string, string) []Vuelo
+	ObtenerVuelosEntreRango(string, string) []Vuelo
 
 	ObtenerSiguienteVuelo(origen, destino, fecha string) *Vuelo
 	Borrar(desde, hasta string) []Vuelo

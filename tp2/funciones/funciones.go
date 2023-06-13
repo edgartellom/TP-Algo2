@@ -18,6 +18,15 @@ const (
 )
 
 const (
+	A_ARCHIVO = "agregar_archivo"
+	V_VUELOS  = "ver_tablero"
+	I_VUELO   = "info_vuelo"
+	P_VUELO   = "prioridad_vuelos"
+	S_VUELO   = "siguiente_vuelo"
+	B_VUELOS  = "borrar"
+)
+
+const (
 	AGREGAR_ARCHIVO = iota
 	VER_TABLERO
 	INFO_VUELO
@@ -32,12 +41,11 @@ var LISTA_COMANDOS = [CANT_COMANDOS]string{"agregar_archivo", "ver_tablero", "in
 
 /* -------------------------------------------------- FUNCION AUX -------------------------------------------------- */
 
-func ComprobarVuelo(vueloEncontrado *vuelos.Vuelo, origen, destino, fecha string) error {
-	var err error
+func ComprobarVuelo(vueloEncontrado *vuelos.Vuelo, origen, destino, fecha string) string {
 	if vueloEncontrado == nil {
-		err = errores.ErrorSiguienteVuelo{Origen: origen, Destino: destino, Fecha: fecha}
+		return fmt.Sprintf("No hay vuelo registrado desde %s hacia %s desde %s", origen, destino, fecha)
 	}
-	return err
+	return (*vueloEncontrado).InformacionCompleta
 }
 
 func ConvertirAInt(cifra string) int {
@@ -51,6 +59,14 @@ func SepararEntrada(entrada string, separador string) []string {
 
 func CrearMensaje(a, b any) string {
 	return fmt.Sprintf("%v - %v", a, b)
+}
+
+func ComprobarEntradaComando(comando string, parametros []string) error {
+	var err error
+	if (comando == V_VUELOS && len(parametros) != 4) || (comando == S_VUELO && len(parametros) != 3) || (comando == B_VUELOS && len(parametros) != 2) || ((comando == A_ARCHIVO || comando == I_VUELO || comando == P_VUELO) && len(parametros) != 1) {
+		err = errores.ErrorComando{Comando: comando}
+	}
+	return err
 }
 
 /* -------------------------------------------------- FUNCIONES DE SALIDA -------------------------------------------------- */
@@ -100,26 +116,32 @@ func ExtraerInformacion(ruta string) ([]vuelos.Vuelo, error) {
 
 func ComprobarEntradaDeNumero(cifra string) (int, error) {
 	numero, err := strconv.Atoi(cifra)
-	if err != nil || numero <= 0 {
+	if err != nil || numero < 0 {
 		err = errores.ErrorComando{Comando: LISTA_COMANDOS[PRIORIDAD_VUELOS]}
 	}
 	return numero, err
 }
 
 func ComprobarEntradaDeRango(desde, hasta string) error {
-	var err error
-	if hasta < desde {
-		err = errores.ErrorComando{Comando: LISTA_COMANDOS[BORRAR]}
+	// var err error
+	// if hasta < desde {
+	// 	err = errores.ErrorComando{Comando: LISTA_COMANDOS[BORRAR]}
+	// }
+	// return err
+	if strings.Compare(hasta, desde) < 0 {
+		return errores.ErrorComando{Comando: LISTA_COMANDOS[BORRAR]}
 	}
-	return err
+	return nil
 }
 
 func ComprobarEntradaVerTablero(cantidad, modo, desde, hasta string) (int, error) {
-	cant, err := ComprobarEntradaDeNumero(cantidad)
-	if (err != nil) || (modo != MODO_ASCENDETE && modo != MODO_DESCENDENTE) || (ComprobarEntradaDeRango(desde, hasta) != nil) {
+	cant, err := strconv.Atoi(cantidad)
+	if (err != nil) || (modo != MODO_ASCENDETE && modo != MODO_DESCENDENTE) {
 		err = errores.ErrorComando{Comando: LISTA_COMANDOS[VER_TABLERO]}
 		return -1, err
-	}
+	} //else if ComprobarEntradaDeRango(desde, hasta) != nil {
+	// 	err = errores.ErrorComando{Comando: LISTA_COMANDOS[VER_TABLERO]}
+	// }
 	return cant, nil
 }
 

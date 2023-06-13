@@ -10,13 +10,13 @@ import (
 const COMPARADOR = 0
 
 type tableroDeControl struct {
-	arbolDeVuelos   TDADicc.DiccionarioOrdenado[CamposComparables, Vuelo]
-	diccDeVuelos    TDADicc.Diccionario[Codigo, Vuelo]
-	listadoDeVuelos []Vuelo
+	arbolDeVuelos TDADicc.DiccionarioOrdenado[CamposComparables, Vuelo]
+	diccDeVuelos  TDADicc.Diccionario[Codigo, Vuelo]
+	codigoMayor   Codigo
 }
 
 func cmpPrioridad(a, b Vuelo) int {
-	superior := b.InfoComparable.Prioridad - a.InfoComparable.Prioridad
+	superior := b.Prioridad - a.Prioridad
 	if superior == COMPARADOR {
 		return strings.Compare(string(a.InfoComparable.Codigo), string(b.InfoComparable.Codigo))
 	}
@@ -38,24 +38,29 @@ func CrearTablero() Tablero {
 }
 
 func (tablero *tableroDeControl) GuardarVuelo(vuelo Vuelo) {
+	if (*tablero).diccDeVuelos.Pertenece(vuelo.InfoComparable.Codigo) {
+		vueloActual := tablero.diccDeVuelos.Obtener(vuelo.InfoComparable.Codigo)
+		(*tablero).arbolDeVuelos.Borrar(vueloActual.InfoComparable)
+	}
+	if vuelo.InfoComparable.Codigo > tablero.codigoMayor {
+		(*tablero).codigoMayor = vuelo.InfoComparable.Codigo
+	}
 	(*tablero).diccDeVuelos.Guardar(vuelo.InfoComparable.Codigo, vuelo)
 	(*tablero).arbolDeVuelos.Guardar(vuelo.InfoComparable, vuelo)
-	(*tablero).listadoDeVuelos = append((*tablero).listadoDeVuelos, vuelo)
 }
 
-func (tablero *tableroDeControl) ObtenerVuelosEntreRango(k int, desde, hasta string) []Vuelo {
+func (tablero *tableroDeControl) ObtenerVuelosEntreRango(desde, hasta string) []Vuelo {
 	var vuelos []Vuelo
-	fechaDeSalida, fechaDeLlegada := CamposComparables{Fecha: desde}, CamposComparables{Fecha: hasta}
-	for iter := tablero.arbolDeVuelos.IteradorRango(&fechaDeSalida, &fechaDeLlegada); iter.HaySiguiente(); iter.Siguiente() {
-		_, vuelo := iter.VerActual()
-		vuelos = append(vuelos, vuelo)
-	}
+	fechaDeSalida, fechaDeLlegada := CamposComparables{Fecha: desde}, CamposComparables{Fecha: hasta, Codigo: tablero.codigoMayor}
+	tablero.arbolDeVuelos.IterarRango(&fechaDeSalida, &fechaDeLlegada, func(_ CamposComparables, v Vuelo) bool {
+		vuelos = append(vuelos, v)
+		return true
+	})
 	return vuelos
 }
 
 func (tablero *tableroDeControl) ObtenerVuelo(codigo string) Vuelo {
-	vuelo := tablero.diccDeVuelos.Obtener(Codigo(codigo))
-	return vuelo
+	return tablero.diccDeVuelos.Obtener(Codigo(codigo))
 }
 
 func (tablero *tableroDeControl) Pertenece(numeroDeVuelo string) bool {
@@ -69,16 +74,14 @@ func (tablero *tableroDeControl) ObtenerVuelosPrioritarios(k int) []Vuelo {
 		vuelosPrioritarios = append(vuelosPrioritarios, vuelo)
 	}
 	TDAHeap.HeapSort(vuelosPrioritarios, cmpPrioridad)
-	return vuelosPrioritarios[:k]
+	if k < len(vuelosPrioritarios) {
+		return vuelosPrioritarios[:k]
+	}
+	return vuelosPrioritarios
 }
 
 func (tablero *tableroDeControl) Borrar(desde, hasta string) []Vuelo {
-	var vuelos []Vuelo
-	fechaDesde, fechaHasta := CamposComparables{Fecha: desde}, CamposComparables{Fecha: hasta}
-	for iter := tablero.arbolDeVuelos.IteradorRango(&fechaDesde, &fechaHasta); iter.HaySiguiente(); iter.Siguiente() {
-		_, vuelo := iter.VerActual()
-		vuelos = append(vuelos, vuelo)
-	}
+	vuelos := (*tablero).ObtenerVuelosEntreRango(desde, hasta)
 	for _, vuelo := range vuelos {
 		(*tablero).arbolDeVuelos.Borrar(vuelo.InfoComparable)
 		(*tablero).diccDeVuelos.Borrar(vuelo.InfoComparable.Codigo)

@@ -25,18 +25,21 @@ func main() {
 		entrada := s.Text()
 		entradaSeparada := funciones.SepararEntrada(entrada, " ")
 		comando := entradaSeparada[COMANDO]
-		switch comando {
-		case "agregar_archivo":
+		err := funciones.ComprobarEntradaComando(comando, entradaSeparada[PARAMETRO_1:])
+		switch {
+		case err != nil:
+			funciones.MostrarSalida(err)
+		case comando == "agregar_archivo":
 			acciones.AgregarArchivo(&tablero, entradaSeparada[PARAMETRO_1])
-		case "ver_tablero":
+		case comando == "ver_tablero":
 			acciones.VerTablero(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3], entradaSeparada[PARAMETRO_4])
-		case "info_vuelo":
+		case comando == "info_vuelo":
 			acciones.InfoVuelo(&tablero, entradaSeparada[PARAMETRO_1])
-		case "prioridad_vuelos":
+		case comando == "prioridad_vuelos":
 			acciones.PrioridadVuelos(&tablero, entradaSeparada[PARAMETRO_1])
-		case "siguiente_vuelo":
+		case comando == "siguiente_vuelo":
 			acciones.ProximoVuelo(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3])
-		case "borrar":
+		case comando == "borrar":
 			acciones.BorrarVuelos(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2])
 		}
 	}
