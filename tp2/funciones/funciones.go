@@ -20,11 +20,11 @@ const (
 	SIGUIENTE_VUELO
 	BORRAR
 
+	CANT_COMANDOS = BORRAR + 1
+
 	SALIDA_EXITOSA   = "OK"
 	MODO_ASCENDETE   = "asc"
 	MODO_DESCENDENTE = "desc"
-
-	CANT_COMANDOS = BORRAR + 1
 )
 
 var COMANDOS = [CANT_COMANDOS]string{"agregar_archivo", "ver_tablero", "info_vuelo", "prioridad_vuelos", "siguiente_vuelo", "borrar"}
@@ -108,12 +108,11 @@ func ComprobarEntradaDeNumero(cifra string) (int, error) {
 }
 
 func ComprobarEntradaVerTablero(cantidad, modo, desde, hasta string) (int, error) {
-	cant, err := strconv.Atoi(cantidad)
+	cant, err := ComprobarEntradaDeNumero(cantidad)
 	if (err != nil) || (modo != MODO_ASCENDETE && modo != MODO_DESCENDENTE) {
 		err = errores.ErrorComando{Comando: COMANDOS[VER_TABLERO]}
-		return -1, err
 	}
-	return cant, nil
+	return cant, err
 }
 
 func ComprobarEntradaInfoVuelo(tablero vuelos.Sistema, codigo string) error {
@@ -133,7 +132,9 @@ func ComprobarVuelo(vueloEncontrado *vuelos.Vuelo, origen, destino, fecha string
 
 func ComprobarEntradaComando(comando string, parametros []string) error {
 	var err error
-	if (comando == COMANDOS[VER_TABLERO] && len(parametros) != 4) || (comando == COMANDOS[SIGUIENTE_VUELO] && len(parametros) != 3) || (comando == COMANDOS[BORRAR] && len(parametros) != 2) ||
+	if (comando == COMANDOS[VER_TABLERO] && len(parametros) != 4) ||
+		(comando == COMANDOS[SIGUIENTE_VUELO] && len(parametros) != 3) ||
+		(comando == COMANDOS[BORRAR] && len(parametros) != 2) ||
 		((comando == COMANDOS[AGREGAR_ARCHIVO] || comando == COMANDOS[INFO_VUELO] || comando == COMANDOS[PRIORIDAD_VUELOS]) && len(parametros) != 1) {
 		err = errores.ErrorComando{Comando: comando}
 	}

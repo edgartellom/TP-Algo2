@@ -24,15 +24,13 @@ type (
 
 const (
 	CODIGO indice = iota
-	AEROLINEA
+	_
 	ORIGEN
 	DESTINO
-	NUM_COLA
+	_
 	PRIORIDAD
 	FECHA
 	DEMORA
-	TIEMPO
-	CANCELADO
 )
 
 // Sistema modela una base de datos, en la cual podremos almacenar y borrar información, además de poder acceder a esta información de diferentes formas.
