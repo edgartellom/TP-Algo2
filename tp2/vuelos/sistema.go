@@ -33,8 +33,8 @@ const (
 	DEMORA
 )
 
-// Sistema modela una base de datos, en la cual podremos almacenar y borrar información, además de poder acceder a esta información de diferentes formas.
-type Sistema interface {
+// Sistema modela una base de datos de un Aeropuerto, en la cual podremos almacenar y borrar información, además de poder acceder a esta información de diferentes formas.
+type SistemaDeVuelos interface {
 
 	//GuardarVuelo nos permite almacenar un Vuelo indicado en la base de datos.
 	GuardarVuelo(Vuelo)

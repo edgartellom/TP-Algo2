@@ -51,7 +51,7 @@ func CrearVuelo(infoDeVuelo string) Vuelo {
 	return Vuelo{InfoComparable: campos, Origen: informacion[ORIGEN], Destino: informacion[DESTINO], InformacionCompleta: strings.Join(informacion, SEPARADOR)}
 }
 
-func CrearSistema() Sistema {
+func CrearSistema() SistemaDeVuelos {
 	arbolDeVuelos := TDADicc.CrearABB[CamposComparables, Vuelo](cmpTablero)
 	diccDeVuelos := TDADicc.CrearHash[Codigo, Vuelo]()
 

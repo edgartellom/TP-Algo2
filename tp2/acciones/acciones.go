@@ -5,25 +5,25 @@ import (
 	"algueiza/vuelos"
 )
 
-func CrearBaseDeDatos() vuelos.Sistema {
+func CrearBaseDeDatos() vuelos.SistemaDeVuelos {
 	return vuelos.CrearSistema()
 }
 
-func AgregarArchivo(base *vuelos.Sistema, ruta string) {
+func AgregarArchivo(sistema *vuelos.SistemaDeVuelos, ruta string) {
 	vuelosEnArchivo, err := funciones.ExtraerInformacion(ruta)
 	if err == nil {
 		for _, vuelo := range vuelosEnArchivo {
-			(*base).GuardarVuelo(vuelo)
+			(*sistema).GuardarVuelo(vuelo)
 		}
 	}
 	funciones.MostrarSalida(err)
 }
 
-func VerTablero(base *vuelos.Sistema, k, modo, desde, hasta string) {
+func VerTablero(sistema *vuelos.SistemaDeVuelos, k, modo, desde, hasta string) {
 	cantidad, err := funciones.ComprobarEntradaVerTablero(k, modo, desde, hasta)
 	var vuelosEnRango []vuelos.Vuelo
 	if err == nil {
-		vuelosEnRango = (*base).ObtenerVuelosEntreRango(desde, hasta)
+		vuelosEnRango = (*sistema).ObtenerVuelosEntreRango(desde, hasta)
 		if modo == funciones.MODO_DESCENDENTE {
 			funciones.InvertirOrden(vuelosEnRango)
 		}
@@ -38,19 +38,19 @@ func VerTablero(base *vuelos.Sistema, k, modo, desde, hasta string) {
 	funciones.MostrarSalida(err)
 }
 
-func InfoVuelo(base *vuelos.Sistema, numeroDeVuelo string) {
-	err := funciones.ComprobarEntradaInfoVuelo(*base, numeroDeVuelo)
+func InfoVuelo(sistema *vuelos.SistemaDeVuelos, numeroDeVuelo string) {
+	err := funciones.ComprobarEntradaInfoVuelo(*sistema, numeroDeVuelo)
 	if err == nil {
-		vuelo := (*base).ObtenerVuelo(numeroDeVuelo)
+		vuelo := (*sistema).ObtenerVuelo(numeroDeVuelo)
 		funciones.MostrarMensaje(vuelo.InformacionCompleta)
 	}
 	funciones.MostrarSalida(err)
 }
 
-func PrioridadVuelos(base *vuelos.Sistema, k string) {
+func PrioridadVuelos(sistema *vuelos.SistemaDeVuelos, k string) {
 	cantidad, err := funciones.ComprobarEntradaDeNumero(k)
 	if err == nil {
-		vuelosPrioritarios := (*base).ObtenerVuelosPrioritarios(cantidad)
+		vuelosPrioritarios := (*sistema).ObtenerVuelosPrioritarios(cantidad)
 		for _, vuelo := range vuelosPrioritarios {
 			mensaje := funciones.CrearMensaje(vuelo.InfoComparable.Prioridad, vuelo.InfoComparable.Codigo)
 			funciones.MostrarMensaje(mensaje)
@@ -59,15 +59,15 @@ func PrioridadVuelos(base *vuelos.Sistema, k string) {
 	funciones.MostrarSalida(err)
 }
 
-func ProximoVuelo(base *vuelos.Sistema, origen, destino, fecha string) {
-	vuelo := (*base).ObtenerSiguienteVuelo(origen, destino, fecha)
+func ProximoVuelo(sistema *vuelos.SistemaDeVuelos, origen, destino, fecha string) {
+	vuelo := (*sistema).ObtenerSiguienteVuelo(origen, destino, fecha)
 	mensaje := funciones.ComprobarVuelo(vuelo, origen, destino, fecha)
 	funciones.MostrarMensaje(mensaje)
 	funciones.MostrarSalida(nil)
 }
 
-func BorrarVuelos(base *vuelos.Sistema, desde, hasta string) {
-	vuelosBorrados := (*base).BorrarVuelos(desde, hasta)
+func BorrarVuelos(sistema *vuelos.SistemaDeVuelos, desde, hasta string) {
+	vuelosBorrados := (*sistema).BorrarVuelos(desde, hasta)
 	for _, vuelo := range vuelosBorrados {
 		funciones.MostrarMensaje(vuelo.InformacionCompleta)
 	}

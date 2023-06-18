@@ -13,6 +13,14 @@ import (
 )
 
 const (
+	CERO = iota
+	UN_PARAMETRO
+	DOS_PARAMETROS
+	TRES_PARAMETROS
+	CUATRO_PARAMETROS
+)
+
+const (
 	AGREGAR_ARCHIVO = iota
 	VER_TABLERO
 	INFO_VUELO
@@ -101,7 +109,7 @@ func MostrarSalida(err error) {
 
 func ComprobarEntradaDeNumero(cifra string) (int, error) {
 	numero, err := strconv.Atoi(cifra)
-	if err != nil || numero < 0 {
+	if err != nil || numero < CERO {
 		err = errores.ErrorComando{Comando: COMANDOS[PRIORIDAD_VUELOS]}
 	}
 	return numero, err
@@ -115,7 +123,7 @@ func ComprobarEntradaVerTablero(cantidad, modo, desde, hasta string) (int, error
 	return cant, err
 }
 
-func ComprobarEntradaInfoVuelo(tablero vuelos.Sistema, codigo string) error {
+func ComprobarEntradaInfoVuelo(tablero vuelos.SistemaDeVuelos, codigo string) error {
 	var err error
 	if !tablero.Pertenece(vuelos.Codigo(codigo)) {
 		err = errores.ErrorComando{Comando: COMANDOS[INFO_VUELO]}
@@ -132,11 +140,22 @@ func ComprobarVuelo(vueloEncontrado *vuelos.Vuelo, origen, destino, fecha string
 
 func ComprobarEntradaComando(comando string, parametros []string) error {
 	var err error
-	if (comando == COMANDOS[VER_TABLERO] && len(parametros) != 4) ||
-		(comando == COMANDOS[SIGUIENTE_VUELO] && len(parametros) != 3) ||
-		(comando == COMANDOS[BORRAR] && len(parametros) != 2) ||
-		((comando == COMANDOS[AGREGAR_ARCHIVO] || comando == COMANDOS[INFO_VUELO] || comando == COMANDOS[PRIORIDAD_VUELOS]) && len(parametros) != 1) {
+	if comprobarParametros(comando, parametros) {
 		err = errores.ErrorComando{Comando: comando}
 	}
 	return err
+}
+
+func comprobarParametros(comando string, parametros []string) bool {
+	cantidadParametros := len(parametros)
+	if comando == COMANDOS[VER_TABLERO] {
+		return cantidadParametros != CUATRO_PARAMETROS
+	} else if comando == COMANDOS[SIGUIENTE_VUELO] {
+		return cantidadParametros != TRES_PARAMETROS
+	} else if comando == COMANDOS[BORRAR] {
+		return cantidadParametros != DOS_PARAMETROS
+	} else if comando == COMANDOS[AGREGAR_ARCHIVO] || comando == COMANDOS[INFO_VUELO] || comando == COMANDOS[PRIORIDAD_VUELOS] {
+		return cantidadParametros != UN_PARAMETRO
+	}
+	return false
 }

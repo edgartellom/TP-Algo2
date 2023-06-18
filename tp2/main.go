@@ -20,7 +20,7 @@ const (
 )
 
 func main() {
-	tablero := acciones.CrearBaseDeDatos()
+	sistema := acciones.CrearBaseDeDatos()
 	s := bufio.NewScanner(os.Stdin)
 
 	for s.Scan() {
@@ -34,22 +34,22 @@ func main() {
 			funciones.MostrarSalida(err)
 
 		case comando == funciones.COMANDOS[funciones.AGREGAR_ARCHIVO]:
-			acciones.AgregarArchivo(&tablero, entradaSeparada[PARAMETRO_1])
+			acciones.AgregarArchivo(&sistema, entradaSeparada[PARAMETRO_1])
 
 		case comando == funciones.COMANDOS[funciones.VER_TABLERO]:
-			acciones.VerTablero(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3], entradaSeparada[PARAMETRO_4])
+			acciones.VerTablero(&sistema, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3], entradaSeparada[PARAMETRO_4])
 
 		case comando == funciones.COMANDOS[funciones.INFO_VUELO]:
-			acciones.InfoVuelo(&tablero, entradaSeparada[PARAMETRO_1])
+			acciones.InfoVuelo(&sistema, entradaSeparada[PARAMETRO_1])
 
 		case comando == funciones.COMANDOS[funciones.PRIORIDAD_VUELOS]:
-			acciones.PrioridadVuelos(&tablero, entradaSeparada[PARAMETRO_1])
+			acciones.PrioridadVuelos(&sistema, entradaSeparada[PARAMETRO_1])
 
 		case comando == funciones.COMANDOS[funciones.SIGUIENTE_VUELO]:
-			acciones.ProximoVuelo(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3])
+			acciones.ProximoVuelo(&sistema, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2], entradaSeparada[PARAMETRO_3])
 
 		case comando == funciones.COMANDOS[funciones.BORRAR]:
-			acciones.BorrarVuelos(&tablero, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2])
+			acciones.BorrarVuelos(&sistema, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2])
 		}
 	}
 
