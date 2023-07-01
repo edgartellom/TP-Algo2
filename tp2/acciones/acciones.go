@@ -3,7 +3,10 @@ package acciones
 import (
 	"algueiza/funciones"
 	"algueiza/vuelos"
+	// TDADicc "tdas/diccionario"
 )
+
+const SALIDA_EXITOSA = "OK"
 
 func CrearBaseDeDatos() vuelos.SistemaDeVuelos {
 	return vuelos.CrearSistema()
@@ -11,18 +14,24 @@ func CrearBaseDeDatos() vuelos.SistemaDeVuelos {
 
 func AgregarArchivo(sistema *vuelos.SistemaDeVuelos, ruta string) {
 	vuelosEnArchivo, err := funciones.ExtraerInformacion(ruta)
-	if err == nil {
+	if err != nil {
+		funciones.MostrarError(err)
+		// return
+	} else {
 		for _, vuelo := range vuelosEnArchivo {
 			(*sistema).GuardarVuelo(vuelo)
 		}
+		funciones.MostrarMensaje(SALIDA_EXITOSA)
 	}
-	funciones.MostrarSalida(err)
 }
 
 func VerTablero(sistema *vuelos.SistemaDeVuelos, k, modo, desde, hasta string) {
 	cantidad, err := funciones.ComprobarEntradaVerTablero(k, modo, desde, hasta)
 	var vuelosEnRango []vuelos.Vuelo
-	if err == nil {
+	if err != nil {
+		funciones.MostrarError(err)
+		// return
+	} else {
 		vuelosEnRango = (*sistema).ObtenerVuelosEntreRango(desde, hasta)
 		if modo == funciones.MODO_DESCENDENTE {
 			funciones.InvertirOrden(vuelosEnRango)
@@ -34,36 +43,42 @@ func VerTablero(sistema *vuelos.SistemaDeVuelos, k, modo, desde, hasta string) {
 			mensaje := funciones.CrearMensaje(vuelo.InfoComparable.Fecha, vuelo.InfoComparable.Codigo)
 			funciones.MostrarMensaje(mensaje)
 		}
+		funciones.MostrarMensaje(SALIDA_EXITOSA)
 	}
-	funciones.MostrarSalida(err)
 }
 
 func InfoVuelo(sistema *vuelos.SistemaDeVuelos, numeroDeVuelo string) {
 	err := funciones.ComprobarEntradaInfoVuelo(*sistema, numeroDeVuelo)
-	if err == nil {
+	if err != nil {
+		funciones.MostrarError(err)
+		// return
+	} else {
 		vuelo := (*sistema).ObtenerVuelo(numeroDeVuelo)
 		funciones.MostrarMensaje(vuelo.InformacionCompleta)
+		funciones.MostrarMensaje(SALIDA_EXITOSA)
 	}
-	funciones.MostrarSalida(err)
 }
 
 func PrioridadVuelos(sistema *vuelos.SistemaDeVuelos, k string) {
 	cantidad, err := funciones.ComprobarEntradaDeNumero(k)
-	if err == nil {
+	if err != nil {
+		funciones.MostrarError(err)
+		// return
+	} else {
 		vuelosPrioritarios := (*sistema).ObtenerVuelosPrioritarios(cantidad)
 		for _, vuelo := range vuelosPrioritarios {
 			mensaje := funciones.CrearMensaje(vuelo.InfoComparable.Prioridad, vuelo.InfoComparable.Codigo)
 			funciones.MostrarMensaje(mensaje)
 		}
+		funciones.MostrarMensaje(SALIDA_EXITOSA)
 	}
-	funciones.MostrarSalida(err)
 }
 
 func ProximoVuelo(sistema *vuelos.SistemaDeVuelos, origen, destino, fecha string) {
 	vuelo := (*sistema).ObtenerSiguienteVuelo(origen, destino, fecha)
 	mensaje := funciones.ComprobarVuelo(vuelo, origen, destino, fecha)
 	funciones.MostrarMensaje(mensaje)
-	funciones.MostrarSalida(nil)
+	funciones.MostrarMensaje(SALIDA_EXITOSA)
 }
 
 func BorrarVuelos(sistema *vuelos.SistemaDeVuelos, desde, hasta string) {
@@ -71,5 +86,98 @@ func BorrarVuelos(sistema *vuelos.SistemaDeVuelos, desde, hasta string) {
 	for _, vuelo := range vuelosBorrados {
 		funciones.MostrarMensaje(vuelo.InformacionCompleta)
 	}
-	funciones.MostrarSalida(nil)
+	funciones.MostrarMensaje(SALIDA_EXITOSA)
 }
+
+/* ------------------------------------------------ CON HASH DE COMANDOS Y FUNCIONES ---------------------------------------- */
+
+// var acciones = [funciones.CANT_COMANDOS]func(*vuelos.SistemaDeVuelos, string, string, string, string){AgregarArchivo, VerTablero, InfoVuelo, PrioridadVuelos, ProximoVuelo, BorrarVuelos}
+
+// func CrearOpciones() TDADicc.Diccionario[string, func(*vuelos.SistemaDeVuelos, string, string, string, string)] {
+// 	opciones := TDADicc.CrearHash[string, func(*vuelos.SistemaDeVuelos, string, string, string, string)]()
+// 	for i := 0; i < funciones.CANT_COMANDOS; i++ {
+// 		opciones.Guardar(funciones.COMANDOS[i], acciones[i])
+// 	}
+// 	return opciones
+// }
+
+// func CrearBaseDeDatos() vuelos.SistemaDeVuelos {
+// 	return vuelos.CrearSistema()
+// }
+
+// func AgregarArchivo(sistema *vuelos.SistemaDeVuelos, ruta, _, _, _ string) {
+// 	vuelosEnArchivo, err := funciones.ExtraerInformacion(ruta)
+// 	if err != nil {
+// 		funciones.MostrarError(err)
+// 		// return
+// 	} else {
+// 		for _, vuelo := range vuelosEnArchivo {
+// 			(*sistema).GuardarVuelo(vuelo)
+// 		}
+// 		funciones.MostrarMensaje(SALIDA_EXITOSA)
+// 	}
+// }
+
+// func VerTablero(sistema *vuelos.SistemaDeVuelos, k, modo, desde, hasta string) {
+// 	cantidad, err := funciones.ComprobarEntradaVerTablero(k, modo, desde, hasta)
+// 	var vuelosEnRango []vuelos.Vuelo
+// 	if err != nil {
+// 		funciones.MostrarError(err)
+// 		// return
+// 	} else {
+// 		vuelosEnRango = (*sistema).ObtenerVuelosEntreRango(desde, hasta)
+// 		if modo == funciones.MODO_DESCENDENTE {
+// 			funciones.InvertirOrden(vuelosEnRango)
+// 		}
+// 		if cantidad < len(vuelosEnRango) {
+// 			vuelosEnRango = vuelosEnRango[:cantidad]
+// 		}
+// 		for _, vuelo := range vuelosEnRango {
+// 			mensaje := funciones.CrearMensaje(vuelo.InfoComparable.Fecha, vuelo.InfoComparable.Codigo)
+// 			funciones.MostrarMensaje(mensaje)
+// 		}
+// 		funciones.MostrarMensaje(SALIDA_EXITOSA)
+// 	}
+// }
+
+// func InfoVuelo(sistema *vuelos.SistemaDeVuelos, numeroDeVuelo, _, _, _ string) {
+// 	err := funciones.ComprobarEntradaInfoVuelo(*sistema, numeroDeVuelo)
+// 	if err != nil {
+// 		funciones.MostrarError(err)
+// 		// return
+// 	} else {
+// 		vuelo := (*sistema).ObtenerVuelo(numeroDeVuelo)
+// 		funciones.MostrarMensaje(vuelo.InformacionCompleta)
+// 		funciones.MostrarMensaje(SALIDA_EXITOSA)
+// 	}
+// }
+
+// func PrioridadVuelos(sistema *vuelos.SistemaDeVuelos, k, _, _, _ string) {
+// 	cantidad, err := funciones.ComprobarEntradaDeNumero(k)
+// 	if err != nil {
+// 		funciones.MostrarError(err)
+// 		// return
+// 	} else {
+// 		vuelosPrioritarios := (*sistema).ObtenerVuelosPrioritarios(cantidad)
+// 		for _, vuelo := range vuelosPrioritarios {
+// 			mensaje := funciones.CrearMensaje(vuelo.InfoComparable.Prioridad, vuelo.InfoComparable.Codigo)
+// 			funciones.MostrarMensaje(mensaje)
+// 		}
+// 		funciones.MostrarMensaje(SALIDA_EXITOSA)
+// 	}
+// }
+
+// func ProximoVuelo(sistema *vuelos.SistemaDeVuelos, origen, destino, fecha, _ string) {
+// 	vuelo := (*sistema).ObtenerSiguienteVuelo(origen, destino, fecha)
+// 	mensaje := funciones.ComprobarVuelo(vuelo, origen, destino, fecha)
+// 	funciones.MostrarMensaje(mensaje)
+// 	funciones.MostrarMensaje(SALIDA_EXITOSA)
+// }
+
+// func BorrarVuelos(sistema *vuelos.SistemaDeVuelos, desde, hasta, _, _ string) {
+// 	vuelosBorrados := (*sistema).BorrarVuelos(desde, hasta)
+// 	for _, vuelo := range vuelosBorrados {
+// 		funciones.MostrarMensaje(vuelo.InformacionCompleta)
+// 	}
+// 	funciones.MostrarMensaje(SALIDA_EXITOSA)
+// }

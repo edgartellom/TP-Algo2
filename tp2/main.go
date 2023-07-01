@@ -19,8 +19,23 @@ const (
 	SEPARADOR = " "
 )
 
+/*
+CAMBIOS QUE HICE:
+	- Los cambios para usar un Hash, todo lo dejo comentado para que lo pruebes en (main.go, acciones.go y funciones.go)
+
+	- Algo que me falto fue no usar numeros magicos en la línea 75 y 76 de este archivo.
+
+	- Separe las funciones y las llamé: "MostrarMensaje(mensaje)" y "MostrarError(error)".
+
+	- La verificación del error antes de la funcionalidad funciona de las 2 formas;
+	agregando un return o poniendo la funcionalidad dentro de un else...
+	(igual te dejo la opcion del else, y la posicion del "return" comentado, elige la que te parezca mejor)
+*/
+
 func main() {
 	sistema := acciones.CrearBaseDeDatos()
+	// opciones := acciones.CrearOpciones()
+
 	s := bufio.NewScanner(os.Stdin)
 
 	for s.Scan() {
@@ -31,7 +46,7 @@ func main() {
 
 		switch {
 		case err != nil:
-			funciones.MostrarSalida(err)
+			funciones.MostrarError(err)
 
 		case comando == funciones.COMANDOS[funciones.AGREGAR_ARCHIVO]:
 			acciones.AgregarArchivo(&sistema, entradaSeparada[PARAMETRO_1])
@@ -51,6 +66,15 @@ func main() {
 		case comando == funciones.COMANDOS[funciones.BORRAR]:
 			acciones.BorrarVuelos(&sistema, entradaSeparada[PARAMETRO_1], entradaSeparada[PARAMETRO_2])
 		}
-	}
 
+		/* ------------------------------------------------ CON HASH DE COMANDOS Y FUNCIONES ---------------------------------------- */
+		// if err != nil {
+		// 	funciones.MostrarError(err)
+		// } else {
+		// 	accion := opciones.Obtener(comando)
+		// 	nuevaEntrada := funciones.CompletarEntrada(entradaSeparada[1:])
+		// 	accion(&sistema, nuevaEntrada[0], nuevaEntrada[1], nuevaEntrada[2], nuevaEntrada[3])
+		// }
+
+	}
 }

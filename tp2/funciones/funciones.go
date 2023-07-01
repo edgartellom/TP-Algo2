@@ -30,7 +30,6 @@ const (
 
 	CANT_COMANDOS = BORRAR + 1
 
-	SALIDA_EXITOSA   = "OK"
 	MODO_ASCENDETE   = "asc"
 	MODO_DESCENDENTE = "desc"
 )
@@ -91,18 +90,22 @@ func CrearMensaje(a, b any) string {
 	return fmt.Sprintf("%v - %v", a, b)
 }
 
+/* ------------------------------------------------ CON HASH DE COMANDOS Y FUNCIONES ---------------------------------------- */
+
+// func CompletarEntrada(entrada []string) []string {
+// 	nuevaEntrada := make([]string, 4)
+// 	copy(nuevaEntrada, entrada)
+// 	return nuevaEntrada
+// }
+
 /* ----------------------------------------------------- FUNCIONES DE SALIDA ----------------------------------------------------- */
 
 func MostrarMensaje(mensaje string) {
 	fmt.Fprintln(os.Stdout, mensaje)
 }
 
-func MostrarSalida(err error) {
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	} else {
-		MostrarMensaje(SALIDA_EXITOSA)
-	}
+func MostrarError(err error) {
+	fmt.Fprintln(os.Stderr, err.Error())
 }
 
 /* --------------------------------------------------- FUNCIONES DE COMPROBACION --------------------------------------------------- */
