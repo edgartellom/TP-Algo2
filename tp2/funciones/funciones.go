@@ -92,11 +92,11 @@ func CrearMensaje(a, b any) string {
 
 /* ------------------------------------------------ CON HASH DE COMANDOS Y FUNCIONES ---------------------------------------- */
 
-// func CompletarEntrada(entrada []string) []string {
-// 	nuevaEntrada := make([]string, 4)
-// 	copy(nuevaEntrada, entrada)
-// 	return nuevaEntrada
-// }
+func CompletarEntrada(entrada []string) []string {
+	nuevaEntrada := make([]string, 4)
+	copy(nuevaEntrada, entrada)
+	return nuevaEntrada
+}
 
 /* ----------------------------------------------------- FUNCIONES DE SALIDA ----------------------------------------------------- */
 
