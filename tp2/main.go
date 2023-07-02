@@ -2,7 +2,7 @@ package main
 
 import (
 	"algueiza/acciones"
-	"algueiza/funciones"
+	funciones "algueiza/validaciones_y_auxiliares"
 	"bufio"
 	"os"
 )

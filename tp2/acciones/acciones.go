@@ -1,7 +1,7 @@
 package acciones
 
 import (
-	"algueiza/funciones"
+	funciones "algueiza/validaciones_y_auxiliares"
 	"algueiza/vuelos"
 	TDADicc "tdas/diccionario"
 )

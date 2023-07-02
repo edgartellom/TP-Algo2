@@ -1,4 +1,4 @@
-package funciones
+package validaciones_y_auxiliares
 
 import (
 	"algueiza/errores"
