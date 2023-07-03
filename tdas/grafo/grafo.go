@@ -1,17 +1,35 @@
 package grafo
 
 type Grafo[K comparable, V any] interface {
-	AgregarVertice(vertice K)
+	EsDirigido() bool
 
-	BorrarVertice(vertice K)
+	AgregarVertice(K)
 
-	AgregarArista(vertice1, vertice2 K, peso V)
+	BorrarVertice(K)
 
-	BorrarArista(vertice1, vertice2 K)
+	BorrarArista(K, K)
 
-	Pertenece(vertice K) bool
+	HayArista(K, K) bool
 
-	HayArista(vertice1, vertice2 K) bool
+	Existe(K) bool
 
-	ObtenerPeso(vertice1, vertice2 K) V
+	ObtenerVertices() []K
+
+	ObtenerAdyacentes(K) []K
+
+	Cantidad() int
+}
+
+type GrafoNoPesado[K comparable, V any] interface {
+	Grafo[K, V]
+
+	AgregarArista(K, K)
+}
+
+type GrafoPesado[K comparable, V any] interface {
+	Grafo[K, V]
+
+	AgregarArista(K, K, V)
+
+	VerPeso(K, K) V
 }
