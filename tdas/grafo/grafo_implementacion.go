@@ -2,123 +2,143 @@ package grafo
 
 import (
 	"fmt"
+	"math/rand"
 	TDAHash "tdas/diccionario"
 )
 
 type grafo[K comparable, V any] struct {
-	dirigido bool
-	vertices TDAHash.Diccionario[K, TDAHash.Diccionario[K, *V]]
-	cantidad int
+	diccVertices TDAHash.Diccionario[K, TDAHash.Diccionario[K, *V]]
+	dirigido     bool
 }
 
 type grafoPesado[K comparable, V any] struct {
-	grafo[K, *V]
+	grafo[K, V]
 }
 
 type grafoNoPesado[K comparable, V any] struct {
-	grafo[K, *V]
-}
-
-func CrearGrafoNoPesado[K comparable, V any](dirigido bool) GrafoNoPesado[K, V] {
-	vertices := TDAHash.CrearHash[K, TDAHash.Diccionario[K, V]]()
-	return &grafoNoPesado[K, V]{grafo[K, *V]{dirigido: dirigido, vertices: vertices}}
+	grafo[K, V]
 }
 
 func CrearGrafoPesado[K comparable, V any](dirigido bool) GrafoPesado[K, V] {
-	vertices := TDAHash.CrearHash[K, TDAHash.Diccionario[K, V]]()
-	return &grafoPesado[K, V]{grafo[K, *V]{dirigido: dirigido, vertices: vertices}}
+	vertices := TDAHash.CrearHash[K, TDAHash.Diccionario[K, *V]]()
+	return &grafoPesado[K, V]{grafo[K, V]{diccVertices: vertices, dirigido: dirigido}}
 }
 
-func (g *grafo[K, V]) EsDirigido() bool {
-	return g.dirigido
+func CrearGrafoNoPesado[K comparable, V any](dirigido bool) GrafoNoPesado[K, V] {
+	vertices := TDAHash.CrearHash[K, TDAHash.Diccionario[K, *V]]()
+	return &grafoNoPesado[K, V]{grafo[K, V]{diccVertices: vertices, dirigido: dirigido}}
 }
 
-func (g *grafo[K, V]) AgregarVertice(vertice K) {
-	if !g.Existe(vertice) {
-		g.vertices.Guardar(vertice, TDAHash.CrearHash[K, *V]())
+func (grafo grafo[K, V]) EsDirigido() bool {
+	return grafo.dirigido
+}
+
+func (grafo grafo[K, V]) AgregarVertice(vertice K) {
+	if !grafo.Existe(vertice) {
+		grafo.diccVertices.Guardar(vertice, TDAHash.CrearHash[K, *V]())
 	}
-	g.cantidad++
 }
 
-func (g *grafo[K, V]) BorrarVertice(vertice K) {
-	g.comprobarVertice(vertice)
-	for iter := g.vertices.Iterador(); iter.HaySiguiente(); iter.Siguiente() {
+func (grafo grafo[K, V]) BorrarVertice(vertice K) {
+	grafo.comprobarVertice(vertice)
+	for iter := grafo.diccVertices.Iterador(); iter.HaySiguiente(); iter.Siguiente() {
 		_, adyacentes := iter.VerActual()
 		if adyacentes.Pertenece(vertice) {
 			adyacentes.Borrar(vertice)
 		}
 	}
-	g.vertices.Borrar(vertice)
-	g.cantidad--
+	grafo.diccVertices.Borrar(vertice)
 }
 
-func (g *grafo[K, V]) BorrarArista(v1, v2 K) {
-	g.comprobarVertice(v1)
-	g.comprobarVertice(v2)
-	g.comprobarArista(v1, v2)
+func (grafo grafo[K, V]) BorrarArista(vertice1, vertice2 K) {
+	grafo.comprobarVertice(vertice1)
+	grafo.comprobarVertice(vertice2)
+	grafo.comprobarArista(vertice1, vertice2)
 
-	g.vertices.Obtener(v1).Borrar(v2)
-	if g.dirigido {
-		g.vertices.Obtener(v2).Borrar(v2)
+	grafo.diccVertices.Obtener(vertice1).Borrar(vertice2)
+	if !grafo.dirigido {
+		grafo.diccVertices.Obtener(vertice2).Borrar(vertice1)
 	}
 }
 
-func (g grafo[K, V]) HayArista(v1, v2 K) bool {
-	g.comprobarVertice(v1)
-	g.comprobarVertice(v2)
-	return g.vertices.Obtener(v1).Pertenece(v2)
+func (grafo grafo[K, V]) Existe(vertice K) bool {
+	return grafo.diccVertices.Pertenece(vertice)
 }
 
-func (g grafo[K, V]) Existe(vertice K) bool {
-	return g.vertices.Pertenece(vertice)
+func (grafo grafo[K, V]) HayArista(vertice1, vertice2 K) bool {
+	grafo.comprobarVertice(vertice1)
+	grafo.comprobarVertice(vertice2)
+	return grafo.diccVertices.Obtener(vertice1).Pertenece(vertice2)
 }
 
-func (g grafo[K, V]) ObtenerVertices() []K {
-	var vertices []K
-	for iter := g.vertices.Iterador(); iter.HaySiguiente(); iter.Siguiente() {
-		v, _ := iter.VerActual()
-		vertices = append(vertices, v)
+func (grafo grafo[K, V]) Cantidad() int {
+	return grafo.diccVertices.Cantidad()
+}
+
+func (grafo grafoPesado[K, V]) AgregarArista(vertice1, vertice2 K, peso V) {
+	grafo.comprobarVertice(vertice1)
+	grafo.comprobarVertice(vertice2)
+
+	grafo.diccVertices.Obtener(vertice1).Guardar(vertice2, &peso)
+	if !grafo.dirigido {
+		grafo.diccVertices.Obtener(vertice2).Guardar(vertice1, &peso)
+	}
+}
+
+func (grafo grafoPesado[K, V]) VerPeso(vertice1, vertice2 K) V {
+	return *grafo.diccVertices.Obtener(vertice1).Obtener(vertice2)
+}
+
+func (grafo grafoNoPesado[K, V]) AgregarArista(vertice1, vertice2 K) {
+	grafo.comprobarVertice(vertice1)
+	grafo.comprobarVertice(vertice2)
+
+	grafo.diccVertices.Obtener(vertice1).Guardar(vertice2, nil)
+	if !grafo.dirigido {
+		grafo.diccVertices.Obtener(vertice2).Guardar(vertice1, nil)
+	}
+}
+
+func (grafo grafo[K, V]) ObtenerAdyacentes(vertice K) []K {
+	adyacentes := make([]K, grafo.diccVertices.Obtener(vertice).Cantidad())
+	for iter, i := grafo.diccVertices.Obtener(vertice).Iterador(), 0; iter.HaySiguiente(); iter.Siguiente() {
+		adyacente, _ := iter.VerActual()
+		adyacentes[i] = adyacente
+		i++
+	}
+	return adyacentes
+}
+
+func (grafo grafo[K, V]) ObtenerVertices() []K {
+	vertices := make([]K, grafo.Cantidad())
+	for iter, i := grafo.diccVertices.Iterador(), 0; iter.HaySiguiente(); iter.Siguiente() {
+		vertice, _ := iter.VerActual()
+		vertices[i] = vertice
+		i++
 	}
 	return vertices
 }
 
-func (g grafo[K, V]) Cantidad() int {
-	return g.cantidad
-}
-
-func (g *grafoNoPesado[K, V]) AgregarArista(v1, v2 K) {
-	g.comprobarVertice(v1)
-	g.comprobarVertice(v2)
-	g.vertices.Obtener(v1).Guardar(v2, nil)
-	if g.dirigido {
-		g.vertices.Obtener(v2).Guardar(v1, nil)
+func (grafo grafo[K, V]) ObtenerVerticeAleatorio() K {
+	vertices := grafo.ObtenerVertices()
+	cantidadVertices := len(vertices)
+	if cantidadVertices == 0 {
+		panic("El grafo no tiene vértices")
 	}
 
+	indiceAleatorio := rand.Intn(cantidadVertices)
+	verticeAleatorio := vertices[indiceAleatorio]
+	return verticeAleatorio
 }
 
-func (g *grafoPesado[K, V]) AgregarArista(v1, v2 K, peso V) {
-	g.comprobarVertice(v1)
-	g.comprobarVertice(v2)
-	g.vertices.Obtener(v1).Guardar(v2, &peso)
-	if g.dirigido {
-		g.vertices.Obtener(v2).Guardar(v1, &peso)
+func (grafo grafo[K, V]) comprobarVertice(vertice K) {
+	if !grafo.Existe(vertice) {
+		panic(fmt.Sprintf("El vertice %v no pertenece al grafo", vertice))
 	}
 }
 
-func (g grafoPesado[K, V]) VerPeso(v1, v2 K) V {
-	return *(g.vertices.Obtener(v1).Obtener(v2))
-}
-
-func (g grafo[K, V]) comprobarVertice(vertice K) {
-	if !g.Existe(vertice) {
-		alerta := fmt.Sprintf("El vertice %v no pertenece al grafo", vertice)
-		panic(alerta)
-	}
-}
-
-func (grafo grafo[K, V]) comprobarArista(v1, v2 K) {
-	if !grafo.HayArista(v1, v2) {
-		alerta := fmt.Sprintf("No existe arista entre los vertices %v y %v", v1, v2)
-		panic(alerta)
+func (grafo grafo[K, V]) comprobarArista(vertice1, vertice2 K) {
+	if !grafo.HayArista(vertice1, vertice2) {
+		panic(fmt.Sprintf("No existe arista entre los vertices %v y %v", vertice1, vertice2))
 	}
 }
