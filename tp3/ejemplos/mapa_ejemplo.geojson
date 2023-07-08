@@ -1,0 +1,162 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.286549,
+          51.534741
+        ]
+      },
+      "properties": {
+        "name": "Doha"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.286211,
+          51.420431
+        ]
+      },
+      "properties": {
+        "name": "Rayan"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.483899,
+          50.847566
+        ]
+      },
+      "properties": {
+        "name": "Zekreet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.428096,
+          50.783242
+        ]
+      },
+      "properties": {
+        "name": "Dukhan"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.210765,
+          50.801382
+        ]
+      },
+      "properties": {
+        "name": "Uum Bab"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.286549,
+            null
+          ],
+          [
+            51.534741
+          ],
+          [
+            25.286211,
+            null
+          ],
+          [
+            51.420431
+          ]
+        ]
+      },
+      "properties": {}
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.286211,
+            null
+          ],
+          [
+            51.420431
+          ],
+          [
+            25.483899,
+            null
+          ],
+          [
+            50.847566
+          ]
+        ]
+      },
+      "properties": {}
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.483899,
+            null
+          ],
+          [
+            50.847566
+          ],
+          [
+            25.428096,
+            null
+          ],
+          [
+            50.783242
+          ]
+        ]
+      },
+      "properties": {}
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.428096,
+            null
+          ],
+          [
+            50.783242
+          ],
+          [
+            25.210765,
+            null
+          ],
+          [
+            50.801382
+          ]
+        ]
+      },
+      "properties": {}
+    }
+  ]
+}

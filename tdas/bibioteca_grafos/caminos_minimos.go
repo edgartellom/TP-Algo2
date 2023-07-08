@@ -1,4 +1,4 @@
-package grafo
+package bibioteca_grafos
 
 import (
 	TDACola "tdas/cola"
@@ -45,7 +45,7 @@ func cmpDijkstra[K comparable](a, b aristaDistancia[K, int]) int {
 	return a.distanciaAOrigen - b.distanciaAOrigen
 }
 
-func CaminoMinimoDijkstra[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, int], origen K) (TDADicc.Diccionario[K, int], TDADicc.Diccionario[K, *K]) {
+func CaminoMinimoDijkstra[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, int], origen K, destino K) (TDADicc.Diccionario[K, int], TDADicc.Diccionario[K, *K]) {
 	distancia := TDADicc.CrearHash[K, int]()
 	padre := TDADicc.CrearHash[K, *K]()
 
@@ -60,6 +60,9 @@ func CaminoMinimoDijkstra[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, int
 
 	for !q.EstaVacia() {
 		v := q.Desencolar().vertice
+		if v == destino {
+			return distancia, padre
+		}
 		for _, w := range grafo.ObtenerAdyacentes(v) {
 			if distancia.Obtener(v)+grafo.VerPeso(v, w) < distancia.Obtener(w) {
 				distancia.Guardar(w, distancia.Obtener(v)+grafo.VerPeso(v, w))

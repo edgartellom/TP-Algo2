@@ -1,4 +1,4 @@
-package grafo
+package bibioteca_grafos
 
 import (
 	TDAHeap "tdas/cola_prioridad"
@@ -6,11 +6,6 @@ import (
 	TDAGrafo "tdas/grafo"
 )
 
-type Arista[K comparable, V any] struct {
-	vertice   K
-	adyacente K
-	peso      V
-}
 
 func cmpPrim[K comparable](a, b Arista[K, int]) int {
 	return a.peso - b.peso

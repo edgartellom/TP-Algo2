@@ -1,4 +1,4 @@
-package grafo
+package bibioteca_grafos
 
 import (
 	TDACola "tdas/cola"
