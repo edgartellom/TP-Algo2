@@ -1,6 +1,8 @@
 package sistema
 
 type (
+	Ciudad string
+
 	Codigo string
 
 	indiceVuelo int
@@ -8,14 +10,14 @@ type (
 	indiceAeropuerto int
 
 	Vuelo struct {
-		AeropuertoOrigen  Aeropuerto
-		AeropuertoDestino Aeropuerto
+		AeropuertoOrigen  Codigo
+		AeropuertoDestino Codigo
 		Tiempo            int
 		Precio            int
 		Cant_vuelos       int
 	}
 	Aeropuerto struct {
-		Ciudad   string
+		Ciudad   Ciudad
 		Codigo   Codigo
 		Latitud  float64
 		Longitud float64
@@ -38,9 +40,9 @@ const (
 type SistemaDeAerolineas interface {
 	GuardarAeropuerto(Aeropuerto)
 	GuardarVuelo(Vuelo)
-	ObtenerCaminoMasBarato(string, string)
-	ObtenerCaminoMasRapido(string, string)
-	ObtenerCaminoConMenosEscalas(string, string)
+	ObtenerCaminoMasBarato(Ciudad, Ciudad) []Aeropuerto
+	ObtenerCaminoMasRapido(Ciudad, Ciudad) []Aeropuerto
+	ObtenerCaminoConMenosEscalas(Ciudad, Ciudad) []Aeropuerto
 	ObtenerAeropuertosMasImportantes(int)
 	CrearRutaMinima(string)
 	CrearItinerario(string)

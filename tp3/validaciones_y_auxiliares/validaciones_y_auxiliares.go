@@ -1,161 +1,118 @@
 package validaciones_y_auxiliares
 
 import (
-	// "algueiza/errores"
-	// "algueiza/vuelos"
-	// "bufio"
+	"bufio"
+	aerolineas "flycombi/sistema_aerolineas"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
-	// TDAPila "tdas/pila"
+)
+
+type indice int
+
+const (
+	ORIGEN indice = iota
+	DESTINO
+	TIEMPO_PROMEDIO
+	PRECIO
+	ESCALAS_ENTRE_AMBOS
+
+	SEPARADOR_1 string = ","
+	SEPARADOR_2 string = " "
 )
 
 const (
-	CERO = iota
-	UN_PARAMETRO
-	DOS_PARAMETROS
-	TRES_PARAMETROS
-	CUATRO_PARAMETROS
+	LONGITUD_ENTRADA_COMPLETA = 4
 )
 
-const (
-	CAMINO_MAS = iota
-	CAMINO_ESCALAS
-	CENTRALIDAD
-	NUEVA_AEROLINEA
-	ITINERARIO
-	EXPORTAR_KML
+func MostrarError(err error) {
+	fmt.Fprintln(os.Stderr, err.Error())
+}
 
-	CANT_COMANDOS = EXPORTAR_KML + 1
-
-	MODO_ASCENDETE   = "asc"
-	MODO_DESCENDENTE = "desc"
-)
-
-var COMANDOS = [CANT_COMANDOS]string{"agregar_archivo", "ver_tablero", "info_vuelo", "prioridad_vuelos", "siguiente_vuelo", "borrar"}
-
-/* ----------------------------------------------------- FUNCIONES AUXILIARES ----------------------------------------------------- */
+func MostrarSalida(mensaje string) {
+	fmt.Fprintln(os.Stdout, mensaje)
+}
 
 func abrirArchivo(ruta string) *os.File {
-	archivo, _ := os.Open(ruta)
-	// if err != nil {
-	// 	err = errores.ErrorComando{Comando: COMANDOS[AGREGAR_ARCHIVO]}
-	// }
+	archivo, err := os.Open(ruta)
+	if err != nil {
+		fmt.Print("asd")
+	}
 	return archivo
-}
-
-func cerrarArchivo(archivo *os.File) {
-	archivo.Close()
-}
-
-// func ExtraerInformacion(ruta string) ([]vuelos.Vuelo, error) {
-// 	var vuelosTotales []vuelos.Vuelo
-
-// 	archivo, err := abrirArchivo(ruta)
-// 	defer cerrarArchivo(archivo)
-
-// 	if err == nil {
-// 		scanner := bufio.NewScanner(archivo)
-// 		for scanner.Scan() {
-// 			informacionDeVuelo := scanner.Text()
-// 			vuelo := vuelos.CrearVuelo(informacionDeVuelo)
-// 			vuelosTotales = append(vuelosTotales, vuelo)
-// 		}
-// 	}
-// 	return vuelosTotales, err
-// }
-
-// func InvertirOrden(arreglo []vuelos.Vuelo) {
-// 	pilaAux := TDAPila.CrearPilaDinamica[vuelos.Vuelo]()
-// 	for _, e := range arreglo {
-// 		pilaAux.Apilar(e)
-// 	}
-// 	for i := 0; i < len(arreglo); i++ {
-// 		arreglo[i] = pilaAux.Desapilar()
-// 	}
-// }
-
-func ConvertirAInt(cifra string) int {
-	numero, _ := strconv.Atoi(cifra)
-	return numero
 }
 
 func SepararEntrada(entrada string, separador string) []string {
 	return strings.Split(entrada, separador)
 }
 
-func CrearMensaje(a, b any) string {
-	return fmt.Sprintf("%v - %v", a, b)
-}
+func ObtenerAeropuertos(ruta string) []aerolineas.Aeropuerto {
+	archivo := abrirArchivo(ruta)
+	defer archivo.Close()
 
-/* ------------------------------------------------ CON HASH DE COMANDOS Y FUNCIONES ---------------------------------------- */
+	var aeropuertos []aerolineas.Aeropuerto
 
-func CompletarEntrada(entrada []string) []string {
-	nuevaEntrada := make([]string, 4)
-	copy(nuevaEntrada, entrada)
-	return nuevaEntrada
-}
-
-/* ----------------------------------------------------- FUNCIONES DE SALIDA ----------------------------------------------------- */
-
-func MostrarMensaje(mensaje string) {
-	fmt.Fprintln(os.Stdout, mensaje)
-}
-
-func MostrarError(err error) {
-	fmt.Fprintln(os.Stderr, err.Error())
-}
-
-/* --------------------------------------------------- FUNCIONES DE COMPROBACION --------------------------------------------------- */
-
-// func ComprobarEntradaDeNumero(cifra string) (int, error) {
-// 	numero, err := strconv.Atoi(cifra)
-// 	if err != nil || numero < CERO {
-// 		err = errores.ErrorComando{Comando: COMANDOS[PRIORIDAD_VUELOS]}
-// 	}
-// 	return numero, err
-// }
-
-// func ComprobarEntradaVerTablero(cantidad, modo, desde, hasta string) (int, error) {
-// 	cant, err := ComprobarEntradaDeNumero(cantidad)
-// 	if (err != nil) || (modo != MODO_ASCENDETE && modo != MODO_DESCENDENTE) {
-// 		err = errores.ErrorComando{Comando: COMANDOS[VER_TABLERO]}
-// 	}
-// 	return cant, err
-// }
-
-// func ComprobarEntradaInfoVuelo(tablero vuelos.SistemaDeVuelos, codigo string) error {
-// 	var err error
-// 	if !tablero.Pertenece(vuelos.Codigo(codigo)) {
-// 		err = errores.ErrorComando{Comando: COMANDOS[INFO_VUELO]}
-// 	}
-// 	return err
-// }
-
-// func ComprobarVuelo(vueloEncontrado *vuelos.Vuelo, origen, destino, fecha string) string {
-// 	if vueloEncontrado == nil {
-// 		return fmt.Sprintf("No hay vuelo registrado desde %s hacia %s desde %s", origen, destino, fecha)
-// 	}
-// 	return (*vueloEncontrado).InformacionCompleta
-// }
-
-// func ComprobarEntradaComando(comando string, parametros []string) error {
-// 	var err error
-// 	if comprobarParametros(comando, parametros) {
-// 		err = errores.ErrorComando{Comando: comando}
-// 	}
-// 	return err
-// }
-
-func comprobarParametros(comando string, parametros []string) bool {
-	cantidadParametros := len(parametros)
-	if comando == COMANDOS[CAMINO_MAS] {
-		return cantidadParametros != TRES_PARAMETROS
-	} else if comando == COMANDOS[CAMINO_ESCALAS] {
-		return cantidadParametros != DOS_PARAMETROS
-	} else if comando == COMANDOS[CENTRALIDAD] || comando == COMANDOS[NUEVA_AEROLINEA] || comando == COMANDOS[ITINERARIO] || comando == COMANDOS[EXPORTAR_KML] {
-		return cantidadParametros != UN_PARAMETRO
+	scanner := bufio.NewScanner(archivo)
+	for scanner.Scan() {
+		linea := scanner.Text()
+		aeropuerto := aerolineas.CrearAeropuerto(linea)
+		aeropuertos = append(aeropuertos, aeropuerto)
 	}
-	return false
+	return aeropuertos
+}
+
+func ObtenerVuelos(ruta string) []aerolineas.Vuelo {
+	archivo := abrirArchivo(ruta)
+	defer archivo.Close()
+
+	var vuelos []aerolineas.Vuelo
+
+	scanner := bufio.NewScanner(archivo)
+	for scanner.Scan() {
+		linea := scanner.Text()
+		vuelo := aerolineas.CrearVuelo(linea)
+		vuelos = append(vuelos, vuelo)
+	}
+	return vuelos
+}
+
+func armarEntrada(entradaCompleta string) []string {
+	var entrada []string
+	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_1)
+	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_2, 2)
+	entrada = append(entrada, entradaSeparada2...)
+	entrada = append(entrada, entradaSeparada1[1:]...)
+	return entrada
+}
+
+/* func comprobarEntrada(entrada []string) error {
+	comando, parametros := entrada[0], entrada[1:]
+	var err error
+	if comando == "camino_mas" && len(parametros) != 3 {
+		err.Error() // error en comando "camino_mas"
+	} else if comando == "camino_escalas" && len(parametros) != 2 {
+		err.Error() // error en comando "camino_escalas"
+	} else if (comando == "centralidad" || comando == "nueva_aerolinea" || comando == "itinerario" || comando == "exportar_kml") && len(parametros) != 1 {
+		err.Error() // error en comando "centralidad"/"nueva_aerolinea"/"itinerario"/"exportar_kml"
+	}
+	return err
+} */
+
+func CompletarEntrada(entrada string) ([]string, error) {
+	entradaCompleta := make([]string, LONGITUD_ENTRADA_COMPLETA)
+	entradaSeparada := armarEntrada(entrada)
+
+	// err := comprobarEntrada(entradaSeparada)
+
+	copy(entradaCompleta, entradaSeparada)
+	return entradaCompleta, nil
+}
+
+func ImprimirCamino(aeropuertos []aerolineas.Aeropuerto) {
+	result := []string{}
+	for _, aeropuerto := range aeropuertos {
+		result = append(result, string(aeropuerto.Codigo))
+	}
+
+	mensaje := strings.Join(result, " -> ")
+	MostrarSalida(mensaje)
 }
