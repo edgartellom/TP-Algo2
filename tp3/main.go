@@ -33,8 +33,6 @@ func main() {
 	sistema := acciones.CrearBaseDeDatos()
 	opciones := acciones.CrearOpciones()
 
-	// fmt.Println(sistema, opciones) // BORRAR
-
 	scanner := bufio.NewScanner(os.Stdin)
 	parametros := os.Args
 	if len(parametros) < CANT_PARAMETROS_INICIALES {

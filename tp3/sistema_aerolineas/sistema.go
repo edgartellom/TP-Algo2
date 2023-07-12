@@ -1,27 +1,33 @@
 package sistema
 
-type (
-	Ciudad string
+type Ciudad string
 
-	Codigo string
+type Codigo string
 
-	indiceVuelo int
+type indiceVuelo int
 
-	indiceAeropuerto int
+type indiceAeropuerto int
 
-	Vuelo struct {
-		AeropuertoOrigen  Codigo
-		AeropuertoDestino Codigo
-		Tiempo            int
-		Precio            int
-		Cant_vuelos       int
-	}
-	Aeropuerto struct {
-		Ciudad   Ciudad
-		Codigo   Codigo
-		Latitud  float64
-		Longitud float64
-	}
+type Aeropuerto struct {
+	Ciudad   Ciudad
+	Codigo   Codigo
+	Latitud  float64
+	Longitud float64
+}
+
+type Vuelo struct {
+	AeropuertoOrigen  Codigo
+	AeropuertoDestino Codigo
+	Tiempo            int
+	Precio            int
+	Cant_vuelos       int
+}
+
+const (
+	CIUDAD indiceAeropuerto = iota
+	CODIGO
+	LATITUD
+	LONGITUD
 )
 
 const (
@@ -30,11 +36,6 @@ const (
 	TIEMPO
 	PRECIO
 	CANT_VUELOS
-
-	CIUDAD indiceAeropuerto = iota
-	CODIGO
-	LATITUD
-	LONGITUD
 )
 
 type SistemaDeAerolineas interface {

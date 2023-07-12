@@ -27,7 +27,7 @@ func CrearOpciones() TDAHash.Diccionario[string, comandos] {
 
 func GuardarInformacion(sistema aerolineas.SistemaDeAerolineas, rutaAeropuertos, rutaVuelos string) {
 	aeropuertos := funciones.ObtenerAeropuertos(rutaAeropuertos)
-	vuelos := funciones.ObtenerVuelos(rutaAeropuertos)
+	vuelos := funciones.ObtenerVuelos(rutaVuelos)
 
 	for _, aeropuerto := range aeropuertos {
 		sistema.GuardarAeropuerto(aeropuerto)

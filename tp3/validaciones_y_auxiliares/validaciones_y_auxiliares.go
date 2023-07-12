@@ -2,6 +2,7 @@ package validaciones_y_auxiliares
 
 import (
 	"bufio"
+	"flycombi/errores"
 	aerolineas "flycombi/sistema_aerolineas"
 	"fmt"
 	"os"
@@ -17,8 +18,15 @@ const (
 	PRECIO
 	ESCALAS_ENTRE_AMBOS
 
-	SEPARADOR_1 string = ","
-	SEPARADOR_2 string = " "
+	SEPARADOR_COMA    string = ","
+	SEPARADOR_ESPACIO string = " "
+)
+
+const (
+	CERO = iota
+	UN_PARAMETRO
+	DOS_PARAMETROS
+	TRES_PARAMETROS
 )
 
 const (
@@ -77,34 +85,35 @@ func ObtenerVuelos(ruta string) []aerolineas.Vuelo {
 
 func armarEntrada(entradaCompleta string) []string {
 	var entrada []string
-	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_1)
-	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_2, 2)
+	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_COMA)
+	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_ESPACIO, 2)
 	entrada = append(entrada, entradaSeparada2...)
 	entrada = append(entrada, entradaSeparada1[1:]...)
 	return entrada
 }
 
-/* func comprobarEntrada(entrada []string) error {
+func comprobarEntrada(entrada []string) error {
 	comando, parametros := entrada[0], entrada[1:]
 	var err error
-	if comando == "camino_mas" && len(parametros) != 3 {
-		err.Error() // error en comando "camino_mas"
-	} else if comando == "camino_escalas" && len(parametros) != 2 {
-		err.Error() // error en comando "camino_escalas"
-	} else if (comando == "centralidad" || comando == "nueva_aerolinea" || comando == "itinerario" || comando == "exportar_kml") && len(parametros) != 1 {
-		err.Error() // error en comando "centralidad"/"nueva_aerolinea"/"itinerario"/"exportar_kml"
+	if (comando == "camino_mas" && len(parametros) != TRES_PARAMETROS) ||
+		(comando == "camino_escalas" && len(parametros) != DOS_PARAMETROS) ||
+		(comando == "centralidad" ||
+			comando == "nueva_aerolinea" ||
+			comando == "itinerario" ||
+			comando == "exportar_kml" && len(parametros) != UN_PARAMETRO) {
+		err = errores.ErrorComando{Comando: comando}
 	}
 	return err
-} */
+}
 
 func CompletarEntrada(entrada string) ([]string, error) {
 	entradaCompleta := make([]string, LONGITUD_ENTRADA_COMPLETA)
 	entradaSeparada := armarEntrada(entrada)
 
-	// err := comprobarEntrada(entradaSeparada)
+	err := comprobarEntrada(entradaSeparada)
 
 	copy(entradaCompleta, entradaSeparada)
-	return entradaCompleta, nil
+	return entradaCompleta, err
 }
 
 func ImprimirCamino(aeropuertos []aerolineas.Aeropuerto) {

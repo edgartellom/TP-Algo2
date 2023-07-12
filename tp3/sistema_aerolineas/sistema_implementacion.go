@@ -50,9 +50,9 @@ func CrearAeropuerto(infoAeropuerto string) Aeropuerto {
 func CrearVuelo(infoDeVuelo string) Vuelo {
 	informacion := strings.Split(infoDeVuelo, SEPARADOR_COMA)
 
-	tiempo, precio, cant_vuelos := convertirAInt(informacion[TIEMPO]), convertirAInt(informacion[PRECIO]), convertirAInt(informacion[CANT_VUELOS])
-
 	codAeropuertoOrigen, codAeropuertoDestino := Codigo(informacion[ORIGEN]), Codigo(informacion[DESTINO])
+
+	tiempo, precio, cant_vuelos := convertirAInt(informacion[TIEMPO]), convertirAInt(informacion[PRECIO]), convertirAInt(informacion[CANT_VUELOS])
 
 	return Vuelo{
 		AeropuertoOrigen:  codAeropuertoOrigen,
