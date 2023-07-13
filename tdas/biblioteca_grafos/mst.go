@@ -7,10 +7,10 @@ import (
 )
 
 func cmpPrim[K comparable](a, b Arista[K]) int {
-	return b.peso - a.peso
+	return int(a.peso - b.peso)
 }
 
-func MstPrim[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, int]) TDAGrafo.GrafoPesado[K, int] {
+func MstPrim[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, float64]) TDAGrafo.GrafoPesado[K, float64] {
 	v := grafo.ObtenerVerticeAleatorio()
 	visitado := TDADicc.CrearHash[K, bool]()
 	visitado.Guardar(v, true)
@@ -19,7 +19,7 @@ func MstPrim[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, int]) TDAGrafo.G
 	for _, w := range grafo.ObtenerAdyacentes(v) {
 		q.Encolar(Arista[K]{v, w, grafo.VerPeso(v, w)})
 	}
-	arbol := TDAGrafo.CrearGrafoPesado[K, int](false)
+	arbol := TDAGrafo.CrearGrafoPesado[K, float64](false)
 	for _, v := range grafo.ObtenerVertices() {
 		arbol.AgregarVertice(v)
 	}

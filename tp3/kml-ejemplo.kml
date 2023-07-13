@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.1">
+	<Document>
+		<name>Camino desde San Diego hasta New York</name>
+		<description>Exporta a un archivo kml el ultimo camino que fue solicitado</description>
+
+		<Placemark>
+			<name>San Diego</name>
+			<Point>
+				<coordinates>-117.18966, 32.73356</coordinates>
+			</Point>
+		</Placemark>
+
+		<Placemark>
+			<name>New York</name>
+			<Point>
+				<coordinates>-73.77893, 40.63975</coordinates>
+			</Point>
+		</Placemark>
+
+		<Placemark>
+			<LineString>
+				<coordinates>-117.18966, 32.73356 -73.77893, 40.63975</coordinates>
+			</LineString>
+		</Placemark>
+
+	</Document>
+</kml>

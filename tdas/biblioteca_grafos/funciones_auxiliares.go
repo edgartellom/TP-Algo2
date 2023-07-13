@@ -9,10 +9,10 @@ import (
 type Arista[K comparable] struct {
 	vertice   K
 	adyacente K
-	peso      int
+	peso      float64
 }
 
-func ObtenerAristas[K comparable, V int](grafo TDAGrafo.GrafoPesado[K, int]) []Arista[K] {
+func ObtenerAristas[K comparable, V float64](grafo TDAGrafo.GrafoPesado[K, float64]) []Arista[K] {
 	var aristas []Arista[K]
 	for _, v := range grafo.ObtenerVertices() {
 		for _, w := range grafo.ObtenerAdyacentes(v) {
@@ -36,10 +36,10 @@ func GradosDeEntrada[K comparable, V any](grafo TDAGrafo.Grafo[K, V]) TDADicc.Di
 	return grados
 }
 
-func ReconstruirCamino[K comparable](padres TDADicc.Diccionario[K, *K], destino *K) []K {
+func ReconstruirCamino[K comparable](padres TDADicc.Diccionario[K, *K], destino K) []K {
 	var camino []K
 	pilaAux := pila.CrearPilaDinamica[K]()
-	for actual := destino; actual != nil; actual = padres.Obtener(*actual) {
+	for actual := &destino; actual != nil; actual = padres.Obtener(*actual) {
 		pilaAux.Apilar(*actual)
 	}
 	for !pilaAux.EstaVacia() {

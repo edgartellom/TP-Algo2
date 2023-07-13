@@ -17,11 +17,6 @@ const (
 )
 
 const (
-	SEPARADOR_1 = ","
-	SEPARADOR_2 = " "
-)
-
-const (
 	INDICE_COMANDO = iota
 	INDICE_RUTA_AEROPUERTOS
 	INDICE_RUTA_VUELOS
@@ -51,7 +46,9 @@ func main() {
 			continue
 		}
 
-		accion := opciones.Obtener(entradaCompleta[INDICE_COMANDO])
-		accion(sistema, entradaCompleta[PARAMETRO_1], entradaCompleta[PARAMETRO_2], entradaCompleta[PARAMETRO_3])
+		if opciones.Pertenece(entradaCompleta[INDICE_COMANDO]) {
+			accion := opciones.Obtener(entradaCompleta[INDICE_COMANDO])
+			accion(sistema, entradaCompleta[PARAMETRO_1], entradaCompleta[PARAMETRO_2], entradaCompleta[PARAMETRO_3])
+		}
 	}
 }

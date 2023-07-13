@@ -1,33 +1,28 @@
 package sistema
 
-type Ciudad string
+type (
+	Ciudad string
 
-type Codigo string
+	Codigo string
 
-type indiceVuelo int
+	indiceVuelo int
 
-type indiceAeropuerto int
+	indiceAeropuerto int
 
-type Aeropuerto struct {
-	Ciudad   Ciudad
-	Codigo   Codigo
-	Latitud  float64
-	Longitud float64
-}
+	Aeropuerto struct {
+		Ciudad   Ciudad
+		Codigo   Codigo
+		Latitud  float64
+		Longitud float64
+	}
 
-type Vuelo struct {
-	AeropuertoOrigen  Codigo
-	AeropuertoDestino Codigo
-	Tiempo            int
-	Precio            int
-	Cant_vuelos       int
-}
-
-const (
-	CIUDAD indiceAeropuerto = iota
-	CODIGO
-	LATITUD
-	LONGITUD
+	Vuelo struct {
+		AeropuertoOrigen  Codigo
+		AeropuertoDestino Codigo
+		Tiempo            float64
+		Precio            float64
+		Cant_vuelos       float64
+	}
 )
 
 const (
@@ -38,15 +33,20 @@ const (
 	CANT_VUELOS
 )
 
+const (
+	CIUDAD indiceAeropuerto = iota
+	CODIGO
+	LATITUD
+	LONGITUD
+)
+
 type SistemaDeAerolineas interface {
 	GuardarAeropuerto(Aeropuerto)
 	GuardarVuelo(Vuelo)
-	ObtenerCaminoMasBarato(Ciudad, Ciudad) []Aeropuerto
-	ObtenerCaminoMasRapido(Ciudad, Ciudad) []Aeropuerto
-	ObtenerCaminoConMenosEscalas(Ciudad, Ciudad) []Aeropuerto
+	ObtenerCamino(string, Ciudad, Ciudad) []Aeropuerto
 	Pertenece(Ciudad) bool
-	ObtenerAeropuertosMasImportantes(int) []Aeropuerto
-	CrearRutaMinima(string)
+	ObtenerAeropuertosMasImportantes(int)
+	ObtenerVuelosMST() []Vuelo
 	CrearItinerario(string)
-	ExportarMapaCamino(string)
+	ObtenerUltimaRutaSolicitada() []Aeropuerto
 }

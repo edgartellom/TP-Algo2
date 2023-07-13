@@ -12,7 +12,7 @@ func Centralidad[K comparable](grafo TDAGrafo.GrafoPesado[K, float64]) TDADicc.D
 		cent.Guardar(v, 0)
 	}
 	for _, v := range grafo.ObtenerVertices() {
-		padres, distancias := CaminoMinimoDijkstraFloat(grafo, v)
+		padres, distancias := CaminoMinimoDijkstra(grafo, v)
 		cent_aux := TDADicc.CrearHash[K, float64]()
 		for _, w := range grafo.ObtenerVertices() {
 			cent_aux.Guardar(w, 0)
