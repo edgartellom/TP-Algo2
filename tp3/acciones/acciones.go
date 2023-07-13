@@ -3,6 +3,7 @@ package acciones
 import (
 	aerolineas "flycombi/sistema_aerolineas"
 	funciones "flycombi/validaciones_y_auxiliares"
+	"strings"
 	TDAHash "tdas/diccionario"
 )
 
@@ -70,7 +71,16 @@ func NuevaAerolinea(sistema aerolineas.SistemaDeAerolineas, ruta, _, _ string) {
 }
 
 func Itinerario(sistema aerolineas.SistemaDeAerolineas, ruta, _, _ string) {
-
+	ciudades, rutas := funciones.ObtenerCiudadesYRutas(ruta)
+	ordenTopo, caminos := sistema.ObtenerCaminosItinerario(ciudades, rutas)
+	var ordenTopoStr []string
+	for _, ciudad := range ordenTopo {
+		ordenTopoStr = append(ordenTopoStr, string(ciudad))
+	}
+	funciones.MostrarMensaje(strings.Join(ordenTopoStr, ", "))
+	for _, camino := range caminos {
+		funciones.MostrarCamino(camino)
+	}
 }
 
 func ExportarKML(sistema aerolineas.SistemaDeAerolineas, ruta, _, _ string) {

@@ -23,6 +23,11 @@ type (
 		Precio            float64
 		Cant_vuelos       float64
 	}
+
+	Ruta struct {
+		CiudadOrigen  Ciudad
+		CiudadDestino Ciudad
+	}
 )
 
 const (
@@ -47,6 +52,6 @@ type SistemaDeAerolineas interface {
 	Pertenece(Ciudad) bool
 	ObtenerAeropuertosMasImportantes(int)
 	ObtenerVuelosMST() []Vuelo
-	CrearItinerario([]Ciudad)
+	ObtenerCaminosItinerario([]Ciudad, []Ruta) ([]Ciudad, [][]Aeropuerto)
 	ObtenerUltimaRutaSolicitada() []Aeropuerto
 }

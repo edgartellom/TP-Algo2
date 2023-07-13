@@ -40,9 +40,9 @@ const (
 	LONGITUD_ENTRADA_COMPLETA = 4
 	CANT_COMANDOS             = 6
 
-	SEPARADOR_1 = ","
-	SEPARADOR_2 = " "
-	SEPARADOR_3 = " -> "
+	SEPARADOR_COMA    = ","
+	SEPARADOR_ESPACIO = " "
+	SEPARADOR_FLECHA  = " -> "
 
 	SALTO_DE_LINEA           = "\n"
 	SANGRIA_DE_LINEA         = "	"
@@ -96,13 +96,13 @@ func MostrarCamino(camino []aerolineas.Aeropuerto) {
 	for i, aeropuerto := range camino {
 		salida[i] = string(aeropuerto.Codigo)
 	}
-	MostrarMensaje(strings.Join(salida, SEPARADOR_3))
+	MostrarMensaje(strings.Join(salida, SEPARADOR_FLECHA))
 }
 
 func crearEntrada(entradaCompleta string) []string {
 	var entrada []string
-	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_1)
-	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_2, 2)
+	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_COMA)
+	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_ESPACIO, 2)
 	entrada = append(entrada, entradaSeparada2...)
 	entrada = append(entrada, entradaSeparada1[1:]...)
 	return entrada
@@ -148,6 +148,33 @@ func ObtenerVuelos(ruta string) []aerolineas.Vuelo {
 		vuelos = append(vuelos, vuelo)
 	}
 	return vuelos
+}
+
+func ObtenerCiudadesYRutas(ruta string) ([]aerolineas.Ciudad, []aerolineas.Ruta) {
+	archivo := abrirArchivo(ruta)
+	defer archivo.Close()
+	var ciudadesStr []string
+	var ciudades []aerolineas.Ciudad
+	var rutas []aerolineas.Ruta
+	scanner := bufio.NewScanner(archivo)
+	primeraLinea := true
+	for scanner.Scan() {
+		linea := scanner.Text()
+		if primeraLinea {
+			ciudadesStr = strings.Split(linea, SEPARADOR_COMA)
+			for _, ciudadStr := range ciudadesStr {
+				ciudades = append(ciudades, aerolineas.Ciudad(ciudadStr))
+			}
+			primeraLinea = false
+		}
+		rutaStr := strings.Split(linea, SEPARADOR_COMA)
+		ruta := aerolineas.Ruta{
+			CiudadOrigen:  aerolineas.Ciudad(rutaStr[0]),
+			CiudadDestino: aerolineas.Ciudad(rutaStr[1]),
+		}
+		rutas = append(rutas, ruta)
+	}
+	return ciudades, rutas
 }
 
 /* -------------------------------------------------------- FUNCIONES DE VALIDACION -------------------------------------------------------- */

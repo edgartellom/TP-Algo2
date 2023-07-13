@@ -8,7 +8,6 @@ import (
 	TDADicc "tdas/diccionario"
 	TDAGrafo "tdas/grafo"
 
-	// TDAPila "tdas/pila"
 	BiblioGrafo "tdas/biblioteca_grafos"
 )
 
@@ -22,7 +21,7 @@ const (
 type sistemaDeAerolineas struct {
 	aeropuertosPorCiudad   TDADicc.Diccionario[Ciudad, []Aeropuerto]
 	aeropuertosAlmacenados TDADicc.Diccionario[Codigo, Aeropuerto]
-	aeropuertos            TDADicc.Diccionario[Codigo, Ciudad] //dudoso
+	aeropuertos            TDADicc.Diccionario[Codigo, Ciudad]
 	vuelosPorPrecio        TDAGrafo.GrafoPesado[Aeropuerto, float64]
 	vuelosPorTiempo        TDAGrafo.GrafoPesado[Aeropuerto, float64]
 	vuelosPorFrecuencia    TDAGrafo.GrafoPesado[Aeropuerto, float64]
@@ -54,7 +53,7 @@ func CrearSistema() SistemaDeAerolineas {
 	sistema := new(sistemaDeAerolineas)
 	sistema.aeropuertosPorCiudad = TDADicc.CrearHash[Ciudad, []Aeropuerto]()
 	sistema.aeropuertosAlmacenados = TDADicc.CrearHash[Codigo, Aeropuerto]()
-	sistema.aeropuertos = TDADicc.CrearHash[Codigo, Ciudad]() //dudoso
+	sistema.aeropuertos = TDADicc.CrearHash[Codigo, Ciudad]()
 	sistema.vuelosPorPrecio = TDAGrafo.CrearGrafoPesado[Aeropuerto, float64](false)
 	sistema.vuelosPorTiempo = TDAGrafo.CrearGrafoPesado[Aeropuerto, float64](false)
 	sistema.vuelosPorFrecuencia = TDAGrafo.CrearGrafoPesado[Aeropuerto, float64](false)
@@ -68,7 +67,7 @@ func (sistema *sistemaDeAerolineas) GuardarAeropuerto(aeropuerto Aeropuerto) {
 	aeropuertosEnCiudad := sistema.aeropuertosPorCiudad.Obtener(aeropuerto.Ciudad)
 	(*sistema).aeropuertosPorCiudad.Guardar(aeropuerto.Ciudad, append(aeropuertosEnCiudad, aeropuerto))
 	(*sistema).aeropuertosAlmacenados.Guardar(aeropuerto.Codigo, aeropuerto)
-	(*sistema).aeropuertos.Guardar(aeropuerto.Codigo, aeropuerto.Ciudad) //dudoso
+	(*sistema).aeropuertos.Guardar(aeropuerto.Codigo, aeropuerto.Ciudad)
 	(*sistema).vuelosPorPrecio.AgregarVertice(aeropuerto)
 	(*sistema).vuelosPorTiempo.AgregarVertice(aeropuerto)
 	(*sistema).vuelosPorFrecuencia.AgregarVertice(aeropuerto)
@@ -143,21 +142,22 @@ func (sistema *sistemaDeAerolineas) ObtenerVuelosMST() []Vuelo {
 	return vuelos
 }
 
-func (sistema *sistemaDeAerolineas) CrearItinerario(ciudades []Ciudad) {
-	// grafo := TDAGrafo.CrearGrafoNoPesado[Ciudad, float64](true)
-	// for _, ciudad := range ciudades {
-	// 	aeropuertos := sistema.aeropuertosPorCiudad.Obtener(ciudad)
-	// 	for _, aeropuerto := range aeropuertos {
-	// 		grafo.AgregarVertice(aeropuerto)
-	// 	}
-	// }
-	// for _, v := range sistema.vuelosPorPrecio.ObtenerVertices() {
+func (sistema *sistemaDeAerolineas) ObtenerCaminosItinerario(ciudades []Ciudad, rutas []Ruta) ([]Ciudad, [][]Aeropuerto) {
+	grafo := TDAGrafo.CrearGrafoNoPesado[Ciudad, float64](true)
+	for _, ciudad := range ciudades {
+		grafo.AgregarVertice(ciudad)
+	}
+	for _, ruta := range rutas {
+		grafo.AgregarArista(ruta.CiudadOrigen, ruta.CiudadDestino)
+	}
+	ordenTopo := BiblioGrafo.TopologicoGrados[Ciudad, float64](grafo)
+	var caminos [][]Aeropuerto
+	for i := 1; i < len(ordenTopo); i++ {
+		camino := sistema.ObtenerCamino("TIPO_RAPIDO", ordenTopo[i-1], ordenTopo[i])
+		caminos = append(caminos, camino)
+	}
 
-	// 	grafo.AgregarVertice(v)
-	// 	for _, w := range sistema.vuelosPorPrecio.ObtenerAdyacentes(v) {
-	// 		grafo.AgregarArista(v, w)
-	// 	}
-	// }
+	return ordenTopo, caminos
 }
 
 func (sistema *sistemaDeAerolineas) ObtenerUltimaRutaSolicitada() []Aeropuerto {
