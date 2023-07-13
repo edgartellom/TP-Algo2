@@ -47,6 +47,6 @@ type SistemaDeAerolineas interface {
 	Pertenece(Ciudad) bool
 	ObtenerAeropuertosMasImportantes(int)
 	ObtenerVuelosMST() []Vuelo
-	CrearItinerario(string)
+	CrearItinerario([]Ciudad)
 	ObtenerUltimaRutaSolicitada() []Aeropuerto
 }

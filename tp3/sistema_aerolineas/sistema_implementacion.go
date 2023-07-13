@@ -143,8 +143,21 @@ func (sistema *sistemaDeAerolineas) ObtenerVuelosMST() []Vuelo {
 	return vuelos
 }
 
-func (sistema *sistemaDeAerolineas) CrearItinerario(rutaEntrada string) {
+func (sistema *sistemaDeAerolineas) CrearItinerario(ciudades []Ciudad) {
+	// grafo := TDAGrafo.CrearGrafoNoPesado[Ciudad, float64](true)
+	// for _, ciudad := range ciudades {
+	// 	aeropuertos := sistema.aeropuertosPorCiudad.Obtener(ciudad)
+	// 	for _, aeropuerto := range aeropuertos {
+	// 		grafo.AgregarVertice(aeropuerto)
+	// 	}
+	// }
+	// for _, v := range sistema.vuelosPorPrecio.ObtenerVertices() {
 
+	// 	grafo.AgregarVertice(v)
+	// 	for _, w := range sistema.vuelosPorPrecio.ObtenerAdyacentes(v) {
+	// 		grafo.AgregarArista(v, w)
+	// 	}
+	// }
 }
 
 func (sistema *sistemaDeAerolineas) ObtenerUltimaRutaSolicitada() []Aeropuerto {
