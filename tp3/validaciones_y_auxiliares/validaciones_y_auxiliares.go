@@ -6,6 +6,7 @@ import (
 	aerolineas "flycombi/sistema_aerolineas"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -17,41 +18,83 @@ const (
 	TIEMPO_PROMEDIO
 	PRECIO
 	ESCALAS_ENTRE_AMBOS
-
-	SEPARADOR_COMA    string = ","
-	SEPARADOR_ESPACIO string = " "
 )
 
 const (
-	CERO = iota
+	COMANDO = iota
 	UN_PARAMETRO
 	DOS_PARAMETROS
 	TRES_PARAMETROS
+	CUATRO_PARAMETROS
+)
+
+const (
+	CAMINO_MAS = iota
+	CAMINO_ESCALAS
+	CENTRALIDAD
+	NUEVA_AEROLINEA
+	ITINERARIO
+	EXPORTAR_KML
 )
 
 const (
 	LONGITUD_ENTRADA_COMPLETA = 4
+	CANT_COMANDOS             = 6
+
+	SEPARADOR_1 string = ","
+	SEPARADOR_2 string = " "
 )
+
+var COMANDOS = [CANT_COMANDOS]string{"camino_mas", "camino_escalas", "centralidad", "nueva_aerolinea", "itinerario", "exportar_kml"}
+
+/* ---------------------------------------------------------- FUNCIONES DE SALIDA ---------------------------------------------------------- */
+
+func MostrarMensaje(mensaje string) {
+	fmt.Fprintln(os.Stdout, mensaje)
+}
 
 func MostrarError(err error) {
 	fmt.Fprintln(os.Stderr, err.Error())
 }
 
-func MostrarSalida(mensaje string) {
-	fmt.Fprintln(os.Stdout, mensaje)
-}
+/* --------------------------------------------------------- FUNCIONES AUXILIARES ---------------------------------------------------------- */
 
 func abrirArchivo(ruta string) *os.File {
 	archivo, err := os.Open(ruta)
 	if err != nil {
-		fmt.Print("asd")
+		MostrarError(new(errores.ErrorLeerArchivo))
 	}
 	return archivo
 }
 
-func SepararEntrada(entrada string, separador string) []string {
-	return strings.Split(entrada, separador)
+func MostrarAeropuertos(aeropuertos []aerolineas.Aeropuerto, separador string) {
+	salida := make([]string, len(aeropuertos))
+	for i, aeropuerto := range aeropuertos {
+		salida[i] = string(aeropuerto.Codigo)
+	}
+	MostrarMensaje(strings.Join(salida, separador))
 }
+
+func crearEntrada(entradaCompleta string) []string {
+	var entrada []string
+	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_1)
+	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_2, 2)
+	entrada = append(entrada, entradaSeparada2...)
+	entrada = append(entrada, entradaSeparada1[1:]...)
+	return entrada
+}
+
+func CompletarYValidarEntrada(entradaReal string) ([]string, error) {
+	entradaCompleta := make([]string, LONGITUD_ENTRADA_COMPLETA)
+	entrada := crearEntrada(entradaReal)
+
+	err := comprobarParametrosDeComando(entrada[COMANDO], entrada[1:])
+
+	copy(entradaCompleta, entrada)
+	return entradaCompleta, err
+}
+
+/* ------------------------------------------------- FUNCIONES DE EXTRACCION DE INFORMACION ------------------------------------------------ */
 
 func ObtenerAeropuertos(ruta string) []aerolineas.Aeropuerto {
 	archivo := abrirArchivo(ruta)
@@ -83,45 +126,40 @@ func ObtenerVuelos(ruta string) []aerolineas.Vuelo {
 	return vuelos
 }
 
-func armarEntrada(entradaCompleta string) []string {
-	var entrada []string
-	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_COMA)
-	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_ESPACIO, 2)
-	entrada = append(entrada, entradaSeparada2...)
-	entrada = append(entrada, entradaSeparada1[1:]...)
-	return entrada
-}
+/* -------------------------------------------------------- FUNCIONES DE VALIDACION -------------------------------------------------------- */
 
-func comprobarEntrada(entrada []string) error {
-	comando, parametros := entrada[0], entrada[1:]
+func comprobarParametrosDeComando(comando string, parametros []string) error {
 	var err error
-	if (comando == "camino_mas" && len(parametros) != TRES_PARAMETROS) ||
-		(comando == "camino_escalas" && len(parametros) != DOS_PARAMETROS) ||
-		(comando == "centralidad" ||
-			comando == "nueva_aerolinea" ||
-			comando == "itinerario" ||
-			comando == "exportar_kml" && len(parametros) != UN_PARAMETRO) {
+	if (comando == COMANDOS[CAMINO_MAS] && len(parametros) != TRES_PARAMETROS) || (comando == COMANDOS[CAMINO_ESCALAS] && len(parametros) != DOS_PARAMETROS) ||
+		(comando == COMANDOS[CENTRALIDAD] || comando == COMANDOS[NUEVA_AEROLINEA] || comando == COMANDOS[ITINERARIO] || comando == COMANDOS[EXPORTAR_KML]) && len(parametros) != UN_PARAMETRO {
 		err = errores.ErrorComando{Comando: comando}
 	}
 	return err
 }
 
-func CompletarEntrada(entrada string) ([]string, error) {
-	entradaCompleta := make([]string, LONGITUD_ENTRADA_COMPLETA)
-	entradaSeparada := armarEntrada(entrada)
-
-	err := comprobarEntrada(entradaSeparada)
-
-	copy(entradaCompleta, entradaSeparada)
-	return entradaCompleta, err
+func ComprobarEntradaCaminoMas(sistema aerolineas.SistemaDeAerolineas, tipo, entradaOrigen, entradaDestino string) error {
+	var err error
+	if tipo != "barato" && tipo != "rapido" {
+		MostrarMensaje("error en el tipo")
+		err = errores.ErrorComando{Comando: COMANDOS[CAMINO_MAS]}
+	} else if !sistema.Pertenece(aerolineas.Ciudad(entradaOrigen)) || !sistema.Pertenece(aerolineas.Ciudad(entradaDestino)) {
+		MostrarMensaje("error que no pertenece")
+		err = errores.ErrorComando{Comando: COMANDOS[CAMINO_MAS]}
+	}
+	return err
 }
 
-func ImprimirCamino(aeropuertos []aerolineas.Aeropuerto) {
-	result := []string{}
-	for _, aeropuerto := range aeropuertos {
-		result = append(result, string(aeropuerto.Codigo))
+func ComprobarEntradaCaminoEscalas(sistema aerolineas.SistemaDeAerolineas, entradaOrigen, entradaDestino string) error {
+	var err error
+	if !sistema.Pertenece(aerolineas.Ciudad(entradaOrigen)) || !sistema.Pertenece(aerolineas.Ciudad(entradaDestino)) {
+		MostrarMensaje("error que no pertenece")
+		err = errores.ErrorComando{Comando: COMANDOS[CAMINO_ESCALAS]}
 	}
+	return err
+}
 
-	mensaje := strings.Join(result, " -> ")
-	MostrarSalida(mensaje)
+func ComprobarEntradaCentralidad(sistema aerolineas.SistemaDeAerolineas, entrada string) error {
+	var err error
+	_, err = strconv.Atoi(entrada)
+	return err
 }

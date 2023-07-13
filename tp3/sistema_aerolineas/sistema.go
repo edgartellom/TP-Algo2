@@ -44,7 +44,8 @@ type SistemaDeAerolineas interface {
 	ObtenerCaminoMasBarato(Ciudad, Ciudad) []Aeropuerto
 	ObtenerCaminoMasRapido(Ciudad, Ciudad) []Aeropuerto
 	ObtenerCaminoConMenosEscalas(Ciudad, Ciudad) []Aeropuerto
-	ObtenerAeropuertosMasImportantes(int)
+	Pertenece(Ciudad) bool
+	ObtenerAeropuertosMasImportantes(int) []Aeropuerto
 	CrearRutaMinima(string)
 	CrearItinerario(string)
 	ExportarMapaCamino(string)

@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
-	"flycombi/acciones"
-	"flycombi/errores"
+	acciones "flycombi/acciones"
+	errores "flycombi/errores"
 	funciones "flycombi/validaciones_y_auxiliares"
 	"os"
 )
@@ -35,8 +35,8 @@ func main() {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	parametros := os.Args
-	if len(parametros) < CANT_PARAMETROS_INICIALES {
-		funciones.MostrarError(errores.ErrorParametros{})
+	if len(parametros) != CANT_PARAMETROS_INICIALES {
+		funciones.MostrarError(new(errores.ErrorParametros))
 	}
 
 	rutaDeAeropuertos, rutaDeVuelos := parametros[INDICE_RUTA_AEROPUERTOS], parametros[INDICE_RUTA_VUELOS]
@@ -44,7 +44,7 @@ func main() {
 
 	for scanner.Scan() {
 		entrada := scanner.Text()
-		entradaCompleta, err := funciones.CompletarEntrada(entrada)
+		entradaCompleta, err := funciones.CompletarYValidarEntrada(entrada)
 
 		if err != nil {
 			funciones.MostrarError(err)
@@ -52,6 +52,6 @@ func main() {
 		}
 
 		accion := opciones.Obtener(entradaCompleta[INDICE_COMANDO])
-		accion(&sistema, entradaCompleta[PARAMETRO_1], entradaCompleta[PARAMETRO_2], entradaCompleta[PARAMETRO_3])
+		accion(sistema, entradaCompleta[PARAMETRO_1], entradaCompleta[PARAMETRO_2], entradaCompleta[PARAMETRO_3])
 	}
 }

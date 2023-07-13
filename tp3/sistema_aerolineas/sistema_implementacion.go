@@ -5,35 +5,29 @@ import (
 	"strconv"
 	"strings"
 
-	BiblioGrafo "tdas/biblioteca_grafos"
 	TDADicc "tdas/diccionario"
 	TDAGrafo "tdas/grafo"
-	TDAPila "tdas/pila"
+
+	// TDAPila "tdas/pila"
+	BiblioGrafo "tdas/biblioteca_grafos"
 )
 
 const (
+	TIPO_BARATO       = "barato"
+	TIPO_RAPIDO       = "rapido"
 	SEPARADOR_COMA    = ","
 	SEPARADOR_ESPACIO = " "
-	COMPARADOR        = 0
 )
 
 type sistemaDeAerolineas struct {
-	aeropuertosAlmacenados TDADicc.Diccionario[Codigo, Aeropuerto]
 	aeropuertosPorCiudad   TDADicc.Diccionario[Ciudad, []Aeropuerto]
+	aeropuertosAlmacenados TDADicc.Diccionario[Codigo, Aeropuerto]
+	aeropuertos            TDADicc.Diccionario[Codigo, Ciudad] //dudoso
 	vuelosPorPrecio        TDAGrafo.GrafoPesado[Aeropuerto, int]
 	vuelosPorTiempo        TDAGrafo.GrafoPesado[Aeropuerto, int]
+	vuelosPorFrecuencia    TDAGrafo.GrafoPesado[Aeropuerto, float64]
 	vuelos                 TDAGrafo.GrafoNoPesado[Aeropuerto, int]
-	caminosEncontrados     TDAPila.Pila[[]Aeropuerto]
-}
-
-func convertirAInt(cadena string) int {
-	numero, _ := strconv.Atoi(cadena)
-	return numero
-}
-
-func convertirAFloat(cadena string) float64 {
-	float, _ := strconv.ParseFloat(cadena, 64)
-	return float
+	// caminosEncontrados     TDAPila.Pila[[]Aeropuerto]
 }
 
 func CrearAeropuerto(infoAeropuerto string) Aeropuerto {
@@ -50,55 +44,46 @@ func CrearAeropuerto(infoAeropuerto string) Aeropuerto {
 func CrearVuelo(infoDeVuelo string) Vuelo {
 	informacion := strings.Split(infoDeVuelo, SEPARADOR_COMA)
 
-	codAeropuertoOrigen, codAeropuertoDestino := Codigo(informacion[ORIGEN]), Codigo(informacion[DESTINO])
+	vuelo := new(Vuelo)
+	vuelo.AeropuertoOrigen, vuelo.AeropuertoDestino = Codigo(informacion[ORIGEN]), Codigo(informacion[DESTINO])
+	vuelo.Tiempo, vuelo.Precio, vuelo.Cant_vuelos = ConvertirAInt(informacion[TIEMPO]), ConvertirAInt(informacion[PRECIO]), ConvertirAInt(informacion[CANT_VUELOS])
 
-	tiempo, precio, cant_vuelos := convertirAInt(informacion[TIEMPO]), convertirAInt(informacion[PRECIO]), convertirAInt(informacion[CANT_VUELOS])
-
-	return Vuelo{
-		AeropuertoOrigen:  codAeropuertoOrigen,
-		AeropuertoDestino: codAeropuertoDestino,
-		Tiempo:            tiempo,
-		Precio:            precio,
-		Cant_vuelos:       cant_vuelos,
-	}
+	return *vuelo
 }
 
 func CrearSistema() SistemaDeAerolineas {
-	diccAeropuertos := TDADicc.CrearHash[Codigo, Aeropuerto]()
-	diccAeropuertosPorCiudad := TDADicc.CrearHash[Ciudad, []Aeropuerto]()
-	grafoConPrecios := TDAGrafo.CrearGrafoPesado[Aeropuerto, int](false)
-	grafoConTiempos := TDAGrafo.CrearGrafoPesado[Aeropuerto, int](false)
-	pilaCaminos := TDAPila.CrearPilaDinamica[[]Aeropuerto]()
-	return &sistemaDeAerolineas{
-		aeropuertosAlmacenados: diccAeropuertos,
-		aeropuertosPorCiudad:   diccAeropuertosPorCiudad,
-		vuelosPorPrecio:        grafoConPrecios,
-		vuelosPorTiempo:        grafoConTiempos,
-		caminosEncontrados:     pilaCaminos,
-	}
+	sistema := new(sistemaDeAerolineas)
+	sistema.aeropuertosPorCiudad = TDADicc.CrearHash[Ciudad, []Aeropuerto]()
+	sistema.aeropuertosAlmacenados = TDADicc.CrearHash[Codigo, Aeropuerto]()
+	sistema.aeropuertos = TDADicc.CrearHash[Codigo, Ciudad]() //dudoso
+	sistema.vuelosPorPrecio = TDAGrafo.CrearGrafoPesado[Aeropuerto, int](false)
+	sistema.vuelosPorTiempo = TDAGrafo.CrearGrafoPesado[Aeropuerto, int](false)
+	sistema.vuelosPorFrecuencia = TDAGrafo.CrearGrafoPesado[Aeropuerto, float64](false)
+	sistema.vuelos = TDAGrafo.CrearGrafoNoPesado[Aeropuerto, int](false)
+	return sistema
 }
 
 func (sistema *sistemaDeAerolineas) GuardarAeropuerto(aeropuerto Aeropuerto) {
-	sistema.aeropuertosAlmacenados.Guardar(aeropuerto.Codigo, aeropuerto)
-
-	if !sistema.aeropuertosPorCiudad.Pertenece(aeropuerto.Ciudad) {
-		sistema.aeropuertosPorCiudad.Guardar(aeropuerto.Ciudad, []Aeropuerto{})
+	if !(*sistema).aeropuertosPorCiudad.Pertenece(aeropuerto.Ciudad) {
+		(*sistema).aeropuertosPorCiudad.Guardar(aeropuerto.Ciudad, []Aeropuerto{})
 	}
-	aeropuertos := sistema.aeropuertosPorCiudad.Obtener(aeropuerto.Ciudad)
-	aeropuertos = append(aeropuertos, aeropuerto)
-	sistema.aeropuertosPorCiudad.Guardar(aeropuerto.Ciudad, aeropuertos)
-
-	sistema.vuelosPorPrecio.AgregarVertice(aeropuerto)
-	sistema.vuelosPorTiempo.AgregarVertice(aeropuerto)
+	aeropuertosEnCiudad := sistema.aeropuertosPorCiudad.Obtener(aeropuerto.Ciudad)
+	(*sistema).aeropuertosPorCiudad.Guardar(aeropuerto.Ciudad, append(aeropuertosEnCiudad, aeropuerto))
+	(*sistema).aeropuertosAlmacenados.Guardar(aeropuerto.Codigo, aeropuerto)
+	(*sistema).aeropuertos.Guardar(aeropuerto.Codigo, aeropuerto.Ciudad) //dudoso
+	(*sistema).vuelosPorPrecio.AgregarVertice(aeropuerto)
+	(*sistema).vuelosPorTiempo.AgregarVertice(aeropuerto)
+	(*sistema).vuelosPorFrecuencia.AgregarVertice(aeropuerto)
+	(*sistema).vuelos.AgregarVertice(aeropuerto)
 }
 
 func (sistema *sistemaDeAerolineas) GuardarVuelo(vuelo Vuelo) {
-	if sistema.aeropuertosAlmacenados.Pertenece(vuelo.AeropuertoOrigen) && sistema.aeropuertosAlmacenados.Pertenece(vuelo.AeropuertoDestino) {
-		aeropuertoOrigen := sistema.aeropuertosAlmacenados.Obtener(vuelo.AeropuertoOrigen)
-		aeropuertoDestino := sistema.aeropuertosAlmacenados.Obtener(vuelo.AeropuertoDestino)
-		sistema.vuelosPorPrecio.AgregarArista(aeropuertoOrigen, aeropuertoDestino, vuelo.Precio)
-		sistema.vuelosPorPrecio.AgregarArista(aeropuertoOrigen, aeropuertoDestino, vuelo.Tiempo)
-	}
+	aeropuertoOrigen := sistema.aeropuertosAlmacenados.Obtener(vuelo.AeropuertoOrigen)
+	aeropuertoDestino := sistema.aeropuertosAlmacenados.Obtener(vuelo.AeropuertoDestino)
+	(*sistema).vuelosPorPrecio.AgregarArista(aeropuertoOrigen, aeropuertoDestino, vuelo.Precio)
+	(*sistema).vuelosPorTiempo.AgregarArista(aeropuertoOrigen, aeropuertoDestino, vuelo.Tiempo)
+	(*sistema).vuelosPorFrecuencia.AgregarArista(aeropuertoOrigen, aeropuertoDestino, float64(1/vuelo.Cant_vuelos))
+	(*sistema).vuelos.AgregarArista(aeropuertoOrigen, aeropuertoDestino)
 }
 
 func (sistema *sistemaDeAerolineas) ObtenerCaminoMasBarato(ciudadOrigen, ciudadDestino Ciudad) []Aeropuerto {
@@ -111,20 +96,19 @@ func (sistema *sistemaDeAerolineas) ObtenerCaminoMasBarato(ciudadOrigen, ciudadD
 	}
 	resul := TDADicc.CrearHash[int, Result]()
 	for _, aeropuertoOrigen := range aeropuertosOrigen {
-		distancias, padres := BiblioGrafo.CaminoMinimoDijkstra[Aeropuerto](sistema.vuelosPorPrecio, aeropuertoOrigen)
-
+		padres, distancias := BiblioGrafo.CaminoMinimoDijkstra[Aeropuerto](sistema.vuelosPorPrecio, aeropuertoOrigen)
 		for _, aeropuertoDestino := range aeropuertosDestino {
 			if padres.Pertenece(aeropuertoDestino) {
-				suma := BiblioGrafo.SumarDistancias[Aeropuerto](distancias)
-				resul.Guardar(suma, Result{padres, aeropuertoDestino})
-				if suma < minPrecio {
-					minPrecio = suma
+				dist := distancias.Obtener(aeropuertoDestino)
+				resul.Guardar(dist, Result{padres, aeropuertoDestino})
+				if dist < minPrecio {
+					minPrecio = dist
 				}
 			}
 		}
 	}
 	minimo := resul.Obtener(minPrecio)
-	camino := BiblioGrafo.ReconstruirCamino[Aeropuerto](minimo.padres, minimo.aeropuertoDestino)
+	camino := BiblioGrafo.ReconstruirCamino[Aeropuerto](minimo.padres, &minimo.aeropuertoDestino)
 	return camino
 }
 
@@ -138,20 +122,20 @@ func (sistema *sistemaDeAerolineas) ObtenerCaminoMasRapido(ciudadOrigen, ciudadD
 	}
 	resul := TDADicc.CrearHash[int, Result]()
 	for _, aeropuertoOrigen := range aeropuertosOrigen {
-		distancias, padres := BiblioGrafo.CaminoMinimoDijkstra[Aeropuerto](sistema.vuelosPorTiempo, aeropuertoOrigen)
+		padres, distancias := BiblioGrafo.CaminoMinimoDijkstra[Aeropuerto](sistema.vuelosPorTiempo, aeropuertoOrigen)
 
 		for _, aeropuertoDestino := range aeropuertosDestino {
 			if padres.Pertenece(aeropuertoDestino) {
-				suma := BiblioGrafo.SumarDistancias[Aeropuerto](distancias)
-				resul.Guardar(suma, Result{padres, aeropuertoDestino})
-				if suma < minTiempo {
-					minTiempo = suma
+				dist := distancias.Obtener(aeropuertoDestino)
+				resul.Guardar(dist, Result{padres, aeropuertoDestino})
+				if dist < minTiempo {
+					minTiempo = dist
 				}
 			}
 		}
 	}
 	minimo := resul.Obtener(minTiempo)
-	camino := BiblioGrafo.ReconstruirCamino[Aeropuerto](minimo.padres, minimo.aeropuertoDestino)
+	camino := BiblioGrafo.ReconstruirCamino[Aeropuerto](minimo.padres, &minimo.aeropuertoDestino)
 	return camino
 }
 
@@ -165,7 +149,8 @@ func (sistema *sistemaDeAerolineas) ObtenerCaminoConMenosEscalas(ciudadOrigen, c
 	}
 	resul := TDADicc.CrearHash[int, Result]()
 	for _, aeropuertoOrigen := range aeropuertosOrigen {
-		padres, orden := BiblioGrafo.RecorridoDfs[Aeropuerto](sistema.vuelos, aeropuertoOrigen)
+		padres, orden := BiblioGrafo.CaminoMinimoBFS[Aeropuerto](sistema.vuelos, aeropuertoOrigen)
+
 		for _, aeropuertoDestino := range aeropuertosDestino {
 			if padres.Pertenece(aeropuertoDestino) {
 				resul.Guardar(orden.Obtener(aeropuertoDestino), Result{padres, aeropuertoDestino})
@@ -175,13 +160,26 @@ func (sistema *sistemaDeAerolineas) ObtenerCaminoConMenosEscalas(ciudadOrigen, c
 			}
 		}
 	}
-	minino := resul.Obtener(minOrden)
-	camino := BiblioGrafo.ReconstruirCamino[Aeropuerto](minino.padres, minino.aeropuertoDestino)
+	minimo := resul.Obtener(minOrden)
+	camino := BiblioGrafo.ReconstruirCamino[Aeropuerto](minimo.padres, &minimo.aeropuertoDestino)
 	return camino
 }
 
-func (sistema *sistemaDeAerolineas) ObtenerAeropuertosMasImportantes(cantidad int) {
+func (sistema sistemaDeAerolineas) Pertenece(ciudad Ciudad) bool {
+	return sistema.aeropuertosPorCiudad.Pertenece(ciudad)
+}
 
+func (sistema *sistemaDeAerolineas) ObtenerAeropuertosMasImportantes(cantidad int) []Aeropuerto {
+	centAeropuertosImportantes := BiblioGrafo.Centralidad[Aeropuerto](sistema.vuelosPorFrecuencia)
+	var aeropuertosImportantes []Aeropuerto
+	for iter := centAeropuertosImportantes.Iterador(); iter.HaySiguiente(); iter.Siguiente() {
+		aeropuerto, _ := iter.VerActual()
+		aeropuertosImportantes = append(aeropuertosImportantes, aeropuerto)
+	}
+	if cantidad < len(aeropuertosImportantes) {
+		return aeropuertosImportantes[:cantidad]
+	}
+	return aeropuertosImportantes
 }
 
 func (sistema *sistemaDeAerolineas) CrearRutaMinima(rutaSalida string) {
@@ -194,4 +192,16 @@ func (sistema *sistemaDeAerolineas) CrearItinerario(rutaEntrada string) {
 
 func (sistema *sistemaDeAerolineas) ExportarMapaCamino(rutaSalida string) {
 
+}
+
+/* -------------------------------------------------- FUNCIONES AUXILIARES -------------------------------------------------- */
+
+func ConvertirAInt(cadena string) int {
+	numero, _ := strconv.Atoi(cadena)
+	return numero
+}
+
+func convertirAFloat(cadena string) float64 {
+	float, _ := strconv.ParseFloat(cadena, 64)
+	return float
 }
