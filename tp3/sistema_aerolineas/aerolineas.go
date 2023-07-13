@@ -1,5 +1,7 @@
 package sistema
 
+import TDADicc "tdas/diccionario"
+
 type (
 	Ciudad string
 
@@ -23,6 +25,11 @@ type (
 		Precio            float64
 		Cant_vuelos       float64
 	}
+
+	Ruta struct {
+		CiudadOrigen  Ciudad
+		CiudadDestino Ciudad
+	}
 )
 
 const (
@@ -45,8 +52,8 @@ type SistemaDeAerolineas interface {
 	GuardarVuelo(Vuelo)
 	ObtenerCamino(string, Ciudad, Ciudad) []Aeropuerto
 	Pertenece(Ciudad) bool
-	ObtenerAeropuertosMasImportantes(int)
-	CrearRutaMinima(string)
-	CrearItinerario(string)
+	ObtenerAeropuertosMasImportantes() TDADicc.Diccionario[Aeropuerto, float64]
+	ObtenerVuelosRutaMinima() []Vuelo
+	ObtenerCaminosItinerario([]Ciudad, []Ruta) ([]Ciudad, [][]Aeropuerto)
 	ObtenerUltimaRutaSolicitada() []Aeropuerto
 }

@@ -33,14 +33,6 @@ func TopologicoGrados[K comparable, V any](grafo TDAGrafo.Grafo[K, V]) []K {
 	return orden
 }
 
-func convertirPilaArreglo[K comparable](pila TDAPila.Pila[K]) []K {
-	var resultante []K
-	for !pila.EstaVacia() {
-		resultante = append(resultante, pila.Desapilar())
-	}
-	return resultante
-}
-
 func _TopologicoDfs[K comparable, V any](grafo TDAGrafo.Grafo[K, V], v K, visitados TDADicc.Diccionario[K, bool], pila TDAPila.Pila[K]) {
 	for _, w := range grafo.ObtenerAdyacentes(v) {
 		if !visitados.Pertenece(w) {

@@ -3,7 +3,7 @@ package biblioteca_grafos
 import (
 	TDADicc "tdas/diccionario"
 	TDAGrafo "tdas/grafo"
-	"tdas/pila"
+	TDAPila "tdas/pila"
 )
 
 type Arista[K comparable] struct {
@@ -36,9 +36,17 @@ func GradosDeEntrada[K comparable, V any](grafo TDAGrafo.Grafo[K, V]) TDADicc.Di
 	return grados
 }
 
+func convertirPilaArreglo[K comparable](pila TDAPila.Pila[K]) []K {
+	var resultante []K
+	for !pila.EstaVacia() {
+		resultante = append(resultante, pila.Desapilar())
+	}
+	return resultante
+}
+
 func ReconstruirCamino[K comparable](padres TDADicc.Diccionario[K, *K], destino K) []K {
 	var camino []K
-	pilaAux := pila.CrearPilaDinamica[K]()
+	pilaAux := TDAPila.CrearPilaDinamica[K]()
 	for actual := &destino; actual != nil; actual = padres.Obtener(*actual) {
 		pilaAux.Apilar(*actual)
 	}
