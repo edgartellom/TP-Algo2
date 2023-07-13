@@ -1,4 +1,4 @@
-package bibioteca_grafos
+package biblioteca_grafos
 
 import (
 	TDAHeap "tdas/cola_prioridad"
@@ -6,19 +6,18 @@ import (
 	TDAGrafo "tdas/grafo"
 )
 
-
-func cmpPrim[K comparable](a, b Arista[K, int]) int {
-	return a.peso - b.peso
+func cmpPrim[K comparable](a, b Arista[K]) int {
+	return b.peso - a.peso
 }
 
 func MstPrim[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, int]) TDAGrafo.GrafoPesado[K, int] {
 	v := grafo.ObtenerVerticeAleatorio()
 	visitado := TDADicc.CrearHash[K, bool]()
 	visitado.Guardar(v, true)
-	q := TDAHeap.CrearHeap[Arista[K, int]](cmpPrim[K])
+	q := TDAHeap.CrearHeap[Arista[K]](cmpPrim[K])
 
 	for _, w := range grafo.ObtenerAdyacentes(v) {
-		q.Encolar(Arista[K, int]{v, w, grafo.VerPeso(v, w)})
+		q.Encolar(Arista[K]{v, w, grafo.VerPeso(v, w)})
 	}
 	arbol := TDAGrafo.CrearGrafoPesado[K, int](false)
 	for _, v := range grafo.ObtenerVertices() {
@@ -36,7 +35,7 @@ func MstPrim[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, int]) TDAGrafo.G
 
 		for _, u := range grafo.ObtenerAdyacentes(w) {
 			if !visitado.Pertenece(u) {
-				q.Encolar(Arista[K, int]{w, u, grafo.VerPeso(w, u)})
+				q.Encolar(Arista[K]{w, u, grafo.VerPeso(w, u)})
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-package bibioteca_grafos
+package biblioteca_grafos
 
 import (
 	TDACola "tdas/cola"
@@ -6,7 +6,7 @@ import (
 	TDAGrafo "tdas/grafo"
 )
 
-func Bfs[K comparable, V any](grafo TDAGrafo.Grafo[K, V], origen K) (TDADicc.Diccionario[K, *K], TDADicc.Diccionario[K, int]) {
+func Bfs[K comparable, V any](grafo TDAGrafo.GrafoNoPesado[K, V], origen K) (TDADicc.Diccionario[K, *K], TDADicc.Diccionario[K, int]) {
 	visitados := TDADicc.CrearHash[K, bool]()
 	padres := TDADicc.CrearHash[K, *K]()
 	orden := TDADicc.CrearHash[K, int]()
@@ -32,7 +32,7 @@ func Bfs[K comparable, V any](grafo TDAGrafo.Grafo[K, V], origen K) (TDADicc.Dic
 	return padres, orden
 }
 
-func dfs[K comparable, V any](grafo TDAGrafo.Grafo[K, V], v K, visitados TDADicc.Diccionario[K, bool], padres TDADicc.Diccionario[K, *K], orden TDADicc.Diccionario[K, int]) {
+func dfs[K comparable, V any](grafo TDAGrafo.GrafoNoPesado[K, V], v K, visitados TDADicc.Diccionario[K, bool], padres TDADicc.Diccionario[K, *K], orden TDADicc.Diccionario[K, int]) {
 	for _, w := range grafo.ObtenerAdyacentes(v) {
 		if !visitados.Pertenece(w) {
 			visitados.Guardar(w, true)
@@ -43,7 +43,7 @@ func dfs[K comparable, V any](grafo TDAGrafo.Grafo[K, V], v K, visitados TDADicc
 	}
 }
 
-func RecorridoDfs[K comparable, V any](grafo TDAGrafo.Grafo[K, V], origen K) (TDADicc.Diccionario[K, *K], TDADicc.Diccionario[K, int]) {
+func RecorridoDfs[K comparable, V any](grafo TDAGrafo.GrafoNoPesado[K, V], origen K) (TDADicc.Diccionario[K, *K], TDADicc.Diccionario[K, int]) {
 	visitados := TDADicc.CrearHash[K, bool]()
 	padres := TDADicc.CrearHash[K, *K]()
 	orden := TDADicc.CrearHash[K, int]()
@@ -54,7 +54,7 @@ func RecorridoDfs[K comparable, V any](grafo TDAGrafo.Grafo[K, V], origen K) (TD
 	return padres, orden
 }
 
-func RecorridoDfsCompleto[K comparable, V any](grafo TDAGrafo.Grafo[K, V]) {
+func RecorridoDfsCompleto[K comparable, V any](grafo TDAGrafo.GrafoNoPesado[K, V]) {
 	visitados := TDADicc.CrearHash[K, bool]()
 	padres := TDADicc.CrearHash[K, *K]()
 	orden := TDADicc.CrearHash[K, int]()

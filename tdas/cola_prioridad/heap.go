@@ -71,7 +71,7 @@ func downheap[T comparable](arr *[]T, posElemento int, tam int, cmp fcmpHeap[T])
 }
 
 func heapify[T comparable](arr []T, tam int, cmp fcmpHeap[T]) {
-	for posElemento := tam - 1; posElemento >= INICIO_DEL_ARREGLO; posElemento-- {
+	for posElemento := tam / 2; posElemento >= INICIO_DEL_ARREGLO; posElemento-- {
 		downheap(&arr, posElemento, tam, cmp)
 	}
 }
