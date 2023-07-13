@@ -6,6 +6,11 @@ import (
 	TDAHash "tdas/diccionario"
 )
 
+const (
+	SALIDA_EXITOSA = "OK"
+	ESCALAS        = "esc"
+)
+
 type comando func(aerolineas.SistemaDeAerolineas, string, string, string)
 
 var ACCIONES = [funciones.CANT_COMANDOS]comando{CaminoMas, CaminoEscalas, Centralidad, NuevaAerolinea, Itinerario, ExportarKML}
@@ -40,17 +45,18 @@ func CaminoMas(sistema aerolineas.SistemaDeAerolineas, tipo, origen, destino str
 		funciones.MostrarError(err)
 		return
 	}
-	var camino []aerolineas.Aeropuerto
-	if tipo == "barato" {
-		camino = sistema.ObtenerCaminoMasBarato(aerolineas.Ciudad(origen), aerolineas.Ciudad(destino))
-	} else {
-		camino = sistema.ObtenerCaminoMasRapido(aerolineas.Ciudad(origen), aerolineas.Ciudad(destino))
-	}
+	camino := sistema.ObtenerCamino(tipo, aerolineas.Ciudad(origen), aerolineas.Ciudad(destino))
 	funciones.MostrarCamino(camino)
 }
 
 func CaminoEscalas(sistema aerolineas.SistemaDeAerolineas, origen, destino, _ string) {
-
+	err := funciones.ComprobarEntradaCaminoEscalas(sistema, origen, destino)
+	if err != nil {
+		funciones.MostrarError(err)
+		return
+	}
+	camino := sistema.ObtenerCamino(ESCALAS, aerolineas.Ciudad(origen), aerolineas.Ciudad(destino))
+	funciones.MostrarCamino(camino)
 }
 
 func Centralidad(sistema aerolineas.SistemaDeAerolineas, n, _, _ string) {
@@ -65,6 +71,8 @@ func Itinerario(sistema aerolineas.SistemaDeAerolineas, ruta, _, _ string) {
 
 }
 
-func ExportarKML(sistema aerolineas.SistemaDeAerolineas, archivo, _, _ string) {
-
+func ExportarKML(sistema aerolineas.SistemaDeAerolineas, ruta, _, _ string) {
+	camino := sistema.ObtenerUltimaRutaSolicitada()
+	funciones.ExportarUltimoCamino(camino, ruta)
+	funciones.MostrarMensaje(SALIDA_EXITOSA)
 }

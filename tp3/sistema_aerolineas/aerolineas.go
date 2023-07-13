@@ -19,9 +19,9 @@ type (
 	Vuelo struct {
 		AeropuertoOrigen  Codigo
 		AeropuertoDestino Codigo
-		Tiempo            int
-		Precio            int
-		Cant_vuelos       int
+		Tiempo            float64
+		Precio            float64
+		Cant_vuelos       float64
 	}
 )
 
@@ -43,12 +43,10 @@ const (
 type SistemaDeAerolineas interface {
 	GuardarAeropuerto(Aeropuerto)
 	GuardarVuelo(Vuelo)
-	ObtenerCaminoMasBarato(Ciudad, Ciudad) []Aeropuerto
-	ObtenerCaminoMasRapido(Ciudad, Ciudad) []Aeropuerto
-	ObtenerCaminoConMenosEscalas(Ciudad, Ciudad) []Aeropuerto
+	ObtenerCamino(string, Ciudad, Ciudad) []Aeropuerto
 	Pertenece(Ciudad) bool
 	ObtenerAeropuertosMasImportantes(int)
 	CrearRutaMinima(string)
 	CrearItinerario(string)
-	ExportarMapaCamino(string)
+	ObtenerUltimaRutaSolicitada() []Aeropuerto
 }
