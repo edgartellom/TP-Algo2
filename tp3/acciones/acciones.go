@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	SEPARADOR_CAMINO     = " -> "
-	SEPARADOR_AEROPUERTO = ", "
-	SALIDA_EXITOSA       = "OK"
-	ESCALAS              = "esc"
+	SEPARADOR_FLECHA = " -> "
+	SEPARADOR_COMA   = ", "
+	SALIDA_EXITOSA   = "OK"
+	ESCALAS          = "esc"
 )
 
 type comando func(aerolineas.SistemaDeAerolineas, string, string, string)
@@ -49,7 +49,7 @@ func CaminoMas(sistema aerolineas.SistemaDeAerolineas, tipo, origen, destino str
 		return
 	}
 	camino := sistema.ObtenerCamino(tipo, aerolineas.Ciudad(origen), aerolineas.Ciudad(destino))
-	funciones.MostrarSalida(camino, SEPARADOR_CAMINO)
+	funciones.MostrarSalida(camino, SEPARADOR_FLECHA)
 }
 
 func CaminoEscalas(sistema aerolineas.SistemaDeAerolineas, origen, destino, _ string) {
@@ -59,7 +59,7 @@ func CaminoEscalas(sistema aerolineas.SistemaDeAerolineas, origen, destino, _ st
 		return
 	}
 	camino := sistema.ObtenerCamino(ESCALAS, aerolineas.Ciudad(origen), aerolineas.Ciudad(destino))
-	funciones.MostrarSalida(camino, SEPARADOR_CAMINO)
+	funciones.MostrarSalida(camino, SEPARADOR_FLECHA)
 }
 
 func Centralidad(sistema aerolineas.SistemaDeAerolineas, n, _, _ string) {
@@ -70,7 +70,7 @@ func Centralidad(sistema aerolineas.SistemaDeAerolineas, n, _, _ string) {
 	}
 	aeropuertoCentrales := sistema.ObtenerAeropuertosMasImportantes()
 	masCentrales := funciones.ObtenerMasCentrales(numero, aeropuertoCentrales)
-	funciones.MostrarSalida(masCentrales, SEPARADOR_AEROPUERTO)
+	funciones.MostrarSalida(masCentrales, SEPARADOR_COMA)
 }
 
 func NuevaAerolinea(sistema aerolineas.SistemaDeAerolineas, ruta, _, _ string) {
@@ -86,9 +86,9 @@ func Itinerario(sistema aerolineas.SistemaDeAerolineas, ruta, _, _ string) {
 	for i, ciudad := range ordenTopo {
 		ordenTopoStr[i] = string(ciudad)
 	}
-	funciones.MostrarMensaje(funciones.CrearMensaje(ordenTopoStr, SEPARADOR_AEROPUERTO))
+	funciones.MostrarMensaje(funciones.CrearMensaje(ordenTopoStr, SEPARADOR_COMA))
 	for _, camino := range caminos {
-		funciones.MostrarSalida(camino, SEPARADOR_CAMINO)
+		funciones.MostrarSalida(camino, SEPARADOR_FLECHA)
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 func cmpPrim[K comparable](a, b Arista[K]) int {
-	return int(a.peso - b.peso)
+	return int(b.peso - a.peso)
 }
 
 func MstPrim[K comparable, V any](grafo TDAGrafo.GrafoPesado[K, float64]) TDAGrafo.GrafoPesado[K, float64] {

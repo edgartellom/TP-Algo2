@@ -12,6 +12,11 @@ import (
 )
 
 const (
+	CANTIDAD_CERO = iota
+	NUMERO_UNO
+)
+
+const (
 	TIPO_BARATO       = "barato"
 	TIPO_RAPIDO       = "rapido"
 	TIPO_ESCALAS      = "esc"
@@ -76,7 +81,7 @@ func (sistema *sistemaDeAerolineas) GuardarVuelo(vuelo Vuelo) {
 	aeropuertoDestino := sistema.aeropuertosAlmacenados.Obtener(vuelo.AeropuertoDestino)
 	(*sistema).vuelosPorPrecio.AgregarArista(aeropuertoOrigen, aeropuertoDestino, vuelo.Precio)
 	(*sistema).vuelosPorTiempo.AgregarArista(aeropuertoOrigen, aeropuertoDestino, vuelo.Tiempo)
-	(*sistema).vuelosPorFrecuencia.AgregarArista(aeropuertoOrigen, aeropuertoDestino, 1/vuelo.Cant_vuelos)
+	(*sistema).vuelosPorFrecuencia.AgregarArista(aeropuertoOrigen, aeropuertoDestino, NUMERO_UNO/vuelo.Cant_vuelos)
 }
 
 func (sistema *sistemaDeAerolineas) ObtenerCamino(tipo string, ciudadOrigen, ciudadDestino Ciudad) []Aeropuerto {
@@ -100,7 +105,7 @@ func (sistema *sistemaDeAerolineas) ObtenerCamino(tipo string, ciudadOrigen, ciu
 		}
 	}
 	var camino []Aeropuerto
-	if res != nil && (*res).padres.Cantidad() != 0 {
+	if res != nil && (*res).padres.Cantidad() != CANTIDAD_CERO {
 		camino = BiblioGrafo.ReconstruirCamino[Aeropuerto]((*res).padres, (*res).aeropuertoDestino)
 	}
 	sistema.ultimoComando = camino
@@ -128,7 +133,7 @@ func (sistema *sistemaDeAerolineas) ObtenerVuelosRutaMinima() []Vuelo {
 			aeropuertoDeDestino := aeropuerto.Codigo
 			tiempo := sistema.vuelosPorTiempo.VerPeso(adyacente, aeropuerto)
 			precio := sistema.vuelosPorPrecio.VerPeso(adyacente, aeropuerto)
-			cantVuelos := math.Round(1 / sistema.vuelosPorFrecuencia.VerPeso(adyacente, aeropuerto))
+			cantVuelos := math.Round(NUMERO_UNO / sistema.vuelosPorFrecuencia.VerPeso(adyacente, aeropuerto))
 			vuelos = append(vuelos, Vuelo{AeropuertoOrigen: aeropuertoOrigen, AeropuertoDestino: aeropuertoDeDestino, Tiempo: tiempo, Precio: precio, Cant_vuelos: cantVuelos})
 		}
 	}
@@ -145,8 +150,8 @@ func (sistema *sistemaDeAerolineas) ObtenerCaminosItinerario(ciudades []Ciudad, 
 	}
 	ordenTopo := BiblioGrafo.TopologicoGrados[Ciudad, float64](grafo)
 	var caminos [][]Aeropuerto
-	for i := 1; i < len(ordenTopo); i++ {
-		camino := sistema.ObtenerCamino(TIPO_RAPIDO, ordenTopo[i-1], ordenTopo[i])
+	for i := NUMERO_UNO; i < len(ordenTopo); i++ {
+		camino := sistema.ObtenerCamino(TIPO_RAPIDO, ordenTopo[i-NUMERO_UNO], ordenTopo[i])
 		caminos = append(caminos, camino)
 	}
 	return ordenTopo, caminos

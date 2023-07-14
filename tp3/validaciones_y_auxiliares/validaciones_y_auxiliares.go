@@ -30,6 +30,13 @@ const (
 )
 
 const (
+	PRIMER_ELEMENTO = iota
+	SEGUNDO_ELEMENTO
+)
+
+const (
+	NUMERO_CERO               = 0
+	LONGITUD_ENTRADA_COMANDO  = 2
 	LONGITUD_ENTRADA_COMPLETA = 4
 	CANT_COMANDOS             = 6
 
@@ -76,9 +83,9 @@ func abrirArchivo(ruta string) *os.File {
 func crearEntrada(entradaCompleta string) []string {
 	var entrada []string
 	entradaSeparada1 := strings.Split(entradaCompleta, SEPARADOR_1)
-	entradaSeparada2 := strings.SplitN(entradaSeparada1[0], SEPARADOR_2, 2)
+	entradaSeparada2 := strings.SplitN(entradaSeparada1[PRIMER_ELEMENTO], SEPARADOR_2, LONGITUD_ENTRADA_COMANDO)
 	entrada = append(entrada, entradaSeparada2...)
-	entrada = append(entrada, entradaSeparada1[1:]...)
+	entrada = append(entrada, entradaSeparada1[SEGUNDO_ELEMENTO:]...)
 	return entrada
 }
 
@@ -86,7 +93,7 @@ func CompletarYValidarEntrada(entradaReal string) ([]string, error) {
 	entradaCompleta := make([]string, LONGITUD_ENTRADA_COMPLETA)
 	entrada := crearEntrada(entradaReal)
 
-	err := comprobarParametrosDeComando(entrada[COMANDO], entrada[1:])
+	err := comprobarParametrosDeComando(entrada[COMANDO], entrada[SEGUNDO_ELEMENTO:])
 
 	copy(entradaCompleta, entrada)
 	return entradaCompleta, err
@@ -100,7 +107,7 @@ type aeropuertoCentralidad struct {
 func ObtenerMasCentrales(cantidad int, diccDeCentralidades TDADicc.Diccionario[aerolineas.Aeropuerto, float64]) []aerolineas.Aeropuerto {
 	aeropuertosOrdenados := ordenarPorCentralidad(diccDeCentralidades)
 	var aeropuertosMasCentrales []aerolineas.Aeropuerto
-	for i := 0; i < len(aeropuertosOrdenados) && i < cantidad; i++ {
+	for i := NUMERO_CERO; i < len(aeropuertosOrdenados) && i < cantidad; i++ {
 		aeropuertosMasCentrales = append(aeropuertosMasCentrales, aeropuertosOrdenados[i].aeropuerto)
 	}
 	return aeropuertosMasCentrales
@@ -108,7 +115,7 @@ func ObtenerMasCentrales(cantidad int, diccDeCentralidades TDADicc.Diccionario[a
 
 func ordenarPorCentralidad(centralidades TDADicc.Diccionario[aerolineas.Aeropuerto, float64]) []aeropuertoCentralidad {
 	ordenados := make([]aeropuertoCentralidad, centralidades.Cantidad())
-	for iter, i := centralidades.Iterador(), 0; iter.HaySiguiente(); iter.Siguiente() {
+	for iter, i := centralidades.Iterador(), NUMERO_CERO; iter.HaySiguiente(); iter.Siguiente() {
 		v, cent := iter.VerActual()
 		ordenados[i] = aeropuertoCentralidad{v, cent}
 		i++
@@ -168,8 +175,8 @@ func ObtenerCiudadesYRutas(ruta string) ([]aerolineas.Ciudad, []aerolineas.Ruta)
 		} else {
 			rutaStr := strings.Split(linea, SEPARADOR_1)
 			ruta := aerolineas.Ruta{
-				CiudadOrigen:  aerolineas.Ciudad(rutaStr[0]),
-				CiudadDestino: aerolineas.Ciudad(rutaStr[1]),
+				CiudadOrigen:  aerolineas.Ciudad(rutaStr[PRIMER_ELEMENTO]),
+				CiudadDestino: aerolineas.Ciudad(rutaStr[SEGUNDO_ELEMENTO]),
 			}
 			rutas = append(rutas, ruta)
 		}

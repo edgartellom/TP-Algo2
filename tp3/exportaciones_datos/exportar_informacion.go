@@ -1,9 +1,15 @@
 package exportaciones_de_datos
 
 import (
-	aerolineas "flycombi/sistema_aerolineas"
 	"fmt"
 	"os"
+
+	aerolineas "flycombi/sistema_aerolineas"
+)
+
+const (
+	ORIGEN     = 0
+	NUMERO_UNO = 1
 )
 
 const (
@@ -40,22 +46,22 @@ func EscribirArchivoKML(ruta string, ultimoCamino []aerolineas.Aeropuerto) {
 
 	archivo.WriteString(DECLARACION_INICIO_KML)
 	archivo.WriteString(INICIO_DOCUMENTO)
-	archivo.WriteString(INICIO_NOMBRE + fmt.Sprintf(TITULO_KML+"%v"+SEPARADOR_ORIGEN_DESTINO+"%v", ultimoCamino[0].Ciudad, ultimoCamino[len(ultimoCamino)-1].Ciudad) + CIERRE_NOMBRE)
+	archivo.WriteString(INICIO_NOMBRE + fmt.Sprintf(TITULO_KML+"%v"+SEPARADOR_ORIGEN_DESTINO+"%v", ultimoCamino[ORIGEN].Ciudad, ultimoCamino[len(ultimoCamino)-NUMERO_UNO].Ciudad) + CIERRE_NOMBRE)
 	archivo.WriteString(INICIO_DESCRIPCION + DESCRIPCION_KML + CIERRE_DESCRIPCION)
 
 	for _, aeropuerto := range ultimoCamino {
 		archivo.WriteString(INICIO_PLACEMARK)
-		archivo.WriteString(fmt.Sprintf(SANGRIA_DE_LINEA+INICIO_NOMBRE+"%v"+CIERRE_NOMBRE, aeropuerto.Ciudad))
+		archivo.WriteString(fmt.Sprintf(SANGRIA_DE_LINEA+INICIO_NOMBRE+"%v"+CIERRE_NOMBRE, aeropuerto.Codigo))
 		archivo.WriteString(INICIO_PUNTO)
 		archivo.WriteString(fmt.Sprintf(INICIO_COORDENADAS+"%v, %v"+CIERRE_COORDENADAS, aeropuerto.Longitud, aeropuerto.Latitud))
 		archivo.WriteString(CIERRE_PUNTO)
 		archivo.WriteString(CIERRE_PLACEMARK)
 	}
 
-	for i := 1; i < len(ultimoCamino); i++ {
+	for i := NUMERO_UNO; i < len(ultimoCamino); i++ {
 		archivo.WriteString(INICIO_PLACEMARK)
 		archivo.WriteString(INICIO_LINEA)
-		archivo.WriteString(fmt.Sprintf(INICIO_COORDENADAS+"%v, %v %v, %v"+CIERRE_COORDENADAS, ultimoCamino[i-1].Longitud, ultimoCamino[i-1].Latitud, ultimoCamino[i].Longitud, ultimoCamino[i].Latitud))
+		archivo.WriteString(fmt.Sprintf(INICIO_COORDENADAS+"%v, %v %v, %v"+CIERRE_COORDENADAS, ultimoCamino[i-NUMERO_UNO].Longitud, ultimoCamino[i-NUMERO_UNO].Latitud, ultimoCamino[i].Longitud, ultimoCamino[i].Latitud))
 		archivo.WriteString(CIERRE_LINEA)
 		archivo.WriteString(CIERRE_PLACEMARK)
 	}

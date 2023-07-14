@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
+	"os"
+
 	acciones "flycombi/acciones"
 	errores "flycombi/errores"
 	funciones "flycombi/validaciones_y_auxiliares"
-	"os"
 )
 
 type indice int
